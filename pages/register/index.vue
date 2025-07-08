@@ -14,26 +14,12 @@
             rounded: 'rounded-sm',
           }"
         >
-          <h2>Login</h2>
-          <form class="mt-7 space-y-7">
+          <h2>Daftar</h2>
+          <form class="mt-7 space-y-7" @submit.prevent="handleSubmit">
             <UFormGroup>
-              <UInput placeholder="No. Handphone/Email" size="lg" />
+              <UInput placeholder="Email" size="lg" />
             </UFormGroup>
-            <UFormGroup>
-              <BaseInputPassword placeholder="Password" size="lg" />
-            </UFormGroup>
-            <div>
-              <UButton block>Log in</UButton>
-              <UButton
-                variant="link"
-                color="blue"
-                :padded="false"
-                class="mt-2"
-                to="/forgot-password"
-              >
-                Lupa password
-              </UButton>
-            </div>
+            <UButton type="submit" block class="uppercase">Berikutnya</UButton>
           </form>
           <UDivider
             label="ATAU"
@@ -47,8 +33,8 @@
             Google
           </UButton>
           <p class="text-sm font-normal text-black/25 text-center mt-8">
-            Baru di Syopee?
-            <NuxtLink to="/register" class="text-primary">Daftar</NuxtLink>
+            Punya akun?
+            <NuxtLink to="/login" class="text-primary">Log in</NuxtLink>
           </p>
         </UCard>
       </div>
@@ -60,9 +46,15 @@
 definePageMeta({
   layout: "auth",
   header: {
-    title: "Log in",
+    title: "Daftar",
   },
 });
+
+const router = useRouter();
+
+function handleSubmit() {
+  router.push("/register/form");
+}
 </script>
 
 <style scoped></style>

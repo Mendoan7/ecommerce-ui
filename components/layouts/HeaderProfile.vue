@@ -1,8 +1,12 @@
 <template>
   <div class="header-profile">
     <UContainer class="header-profile-container">
-      <UButton variant="link" color="white" class="px-3"> Daftar </UButton>
-      <UButton variant="link" color="white" class="px-3"> Login </UButton>
+      <UButton variant="link" color="white" class="px-3" to="/register">
+        Daftar
+      </UButton>
+      <UButton variant="link" color="white" class="px-3" to="/login">
+        Login
+      </UButton>
     </UContainer>
   </div>
 </template>

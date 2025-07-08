@@ -9,7 +9,7 @@
         <div class="text-center w-[10%]">Aksi</div>
       </div>
     </UCard>
-    <!-- Header -->
+
     <UCard>
       <template #header>
         <h2 class="text-sm text-black/85 font-medium">Shop name</h2>
@@ -18,7 +18,10 @@
         <div v-for="i in 5" :key="`product-${i}`" class="cart-product">
           <div class="w-[46%]">
             <div class="flex gap-3 text-sm items-center">
-              <img src="/images/boyok1.webp" class="aspect-[1/1] w-20" />
+              <img
+                src="https://picsum.photos/1920/1080?random=1"
+                class="aspect-[1/1] w-20"
+              />
               <p class="line-clamp-2 items-center text-black/85">
                 Kaos Game Over Pixelo - T-shirt / Tees Gamer PS Nintendo Game
                 Retro & Kaos 90an
@@ -58,7 +61,7 @@
         <div class="flex justify-end gap-40">
           <div class="flex gap-1 items-center font-medium">
             <IconVoucher />
-            Voucher Syopee
+            Voucher Syopo
           </div>
           <UButton variant="link" color="blue" @click="openVoucher = true">
             Gunakan/masukkan kode
