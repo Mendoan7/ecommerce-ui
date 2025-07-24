@@ -24,6 +24,7 @@ const sidebarItems = [
       {
         label: "Daftar Produk",
         to: "/seller/product",
+        exact: true,
       },
       {
         label: "Tambah Produk",
@@ -60,6 +61,7 @@ const sidebarItems = [
 .main-content {
   @apply flex-1;
   @apply bg-black/10;
+  @apply pt-[calc(56px+16px)] pb-4 pl-[calc(240px+32px)] pr-8;
 }
 
 .seller-sidebar {
