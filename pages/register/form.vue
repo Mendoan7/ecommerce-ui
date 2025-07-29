@@ -19,8 +19,11 @@
         <UCard class="auth-shadow">
           <component
             :is="registerStep[stepActive].component"
-            @next="handleNext(registerStep[stepActive].key)"
+            ref="formStepElement"
+            v-bind="customProps"
+            @next="handleNext(registerStep[stepActive].key, $event)"
             @back="handleBack(registerStep[stepActive].key)"
+            @resend="handleResendOtp"
           />
         </UCard>
       </div>
@@ -39,9 +42,12 @@ definePageMeta({
   },
 });
 
-const router = useRouter();
+const session = useSession();
+const { tokenCookie, token, profile, registerForm } = storeToRefs(session);
 
+const router = useRouter();
 const stepActive = ref(0);
+const formStepElement = ref();
 
 const registerStep = [
   {
@@ -61,10 +67,122 @@ const registerStep = [
   },
 ];
 
-function handleNext() {
-  stepActive.value++;
+const {
+  status: statusValidate,
+  error: errorValidate,
+  execute: validateOtp,
+} = useSubmit("/server/api/check-otp");
+const { status: statusResend, execute: resendOtp } = useSubmit(
+  "/server/api/resend-otp",
+  {
+    onResponse({ response }) {
+      if (response.ok) {
+        formStepElement.value.startCountdown();
+      }
+    },
+  }
+);
+function handleResendOtp() {
+  resendOtp({
+    email: registerForm.value.email,
+  });
 }
 
+const {
+  status: statusRegister,
+  execute: verifyRegister,
+  error: errorRegister,
+  data: dataRegister,
+} = useSubmit("/server/api/verify-register");
+
+const { execute: getProfile, status: statusProfile } = useApi(
+  "/server/api/profile",
+  {
+    immediate: false,
+    onResponse({ response }) {
+      if (response.ok) {
+        profile.value = response._data.data;
+        session.resetRegisterForm();
+        stepActive.value++;
+      }
+    },
+  }
+);
+
+const customProps = computed(() => {
+  switch (registerStep[stepActive.value].key) {
+    case "otp":
+      return {
+        loading: statusValidate.value === "pending",
+        loadingResend: statusResend.value === "pending",
+      };
+
+    case "password":
+      return {
+        loading:
+          statusRegister.value === "pending" ||
+          statusProfile.value === "pending",
+      };
+
+    default:
+      return {};
+  }
+});
+
+async function handleNext(step, value) {
+  switch (step) {
+    case "otp":
+      formStepElement.value.setError("");
+      await validateOtp({
+        email: registerForm.value.email,
+        otp: value.otp,
+      });
+
+      if (errorValidate.value) {
+        formStepElement.value.setError(
+          errorValidate.value.data?.meta?.validations?.otp?.[0]
+        );
+        return;
+      }
+
+      if (statusValidate.value === "success") {
+        registerForm.value.otp = value.otp;
+        stepActive.value++;
+      }
+      break;
+
+    case "password":
+      formStepElement.value.setError({});
+
+      await verifyRegister({
+        email: registerForm.value.email,
+        otp: registerForm.value.otp,
+        password: value.password,
+        password_confirmation: value.password,
+      });
+
+      if (errorRegister.value) {
+        formStepElement.value.setError(
+          errorRegister.value.data?.meta?.validations || {}
+        );
+        return;
+      }
+
+      if (statusRegister.value === "success") {
+        registerForm.value.password = value.password;
+        registerForm.value.password_confirmation = value.password;
+
+        token.value = dataRegister.value.data?.token;
+        tokenCookie.value = dataRegister.value.data?.token;
+
+        getProfile();
+      }
+      break;
+
+    default:
+      break;
+  }
+}
 function handleBack(stepKey) {
   if (stepKey === "otp") {
     return router.push("/register");

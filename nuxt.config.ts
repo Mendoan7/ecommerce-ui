@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
-  modules: ["@nuxt/ui", "@nuxt/eslint", "@vueuse/nuxt", "@nuxt/image"],
+  modules: ["@nuxt/ui", "@nuxt/eslint", "@vueuse/nuxt", "@nuxt/image", "@pinia/nuxt"],
   colorMode: {
     preference: 'light', // default theme
     fallback: 'light',
@@ -27,4 +27,13 @@ export default defineNuxtConfig({
       ],
     },
   },
-})
+  runtimeConfig: {
+    public: {
+      clientIdGoogleSignIn: "",
+    },
+  },
+  routeRules: {
+    "/server/**": { proxy: `${import.meta.env.NUXT_BASE_URL}/**` },
+    "/register/**": { ssr: false },
+  },
+});

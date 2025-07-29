@@ -12,27 +12,86 @@
       Kode OTP telah dikirim via e-mail ke
     </p>
     <p class="text-center font-medium text-black/80 mt-2">
-      ardiansyahbisma7@email.com
+      {{ showingEmail }}
     </p>
     <form class="space-y-16 mt-16">
-      <UFormGroup>
+      <UFormGroup
+        :error="errorMessages"
+        :ui="{
+          error: 'text-center',
+        }"
+      >
         <BaseInputPin v-model="otpValue" />
       </UFormGroup>
       <div>
-        <p class="text-black/25 text-sm text-center">
-          Mohon tunggu {{ 35 }} detik untuk mengirim ulang.
+        <p v-if="isRunning" class="text-black/25 text-sm text-center">
+          Mohon tunggu {{ displayValue }} detik untuk mengirim ulang.
         </p>
-        <UButton block class="uppercase mt-2" @click="emit('next')"
-          >Berikutnya</UButton
+        <div v-else class="text-black/25 text-sm text-center">
+          Tidak mendapatkan kode?
+          <UButton
+            variant="link"
+            :padded="false"
+            color="blue"
+            :loading="loadingResend"
+            @click="emit('resend')"
+          >
+            Kirim Ulang
+          </UButton>
+        </div>
+        <UButton
+          block
+          class="uppercase mt-2"
+          :loading="loading"
+          :disabled="otpValue.length !== 6"
+          @click="handleSubmit"
         >
+          Berikutnya
+        </UButton>
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(["next", "back"]);
+defineProps({
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+  loadingResend: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const emit = defineEmits(["next", "back", "resend"]);
+const { registerForm } = storeToRefs(useSession());
 const otpValue = ref("");
+const errorMessages = ref("");
+
+const { maskEmail } = useMasking();
+const showingEmail = computed(() => maskEmail(registerForm.value.email));
+
+const { startCountdown, displayValue, isRunning } = useCountdown();
+startCountdown(30);
+
+function handleSubmit() {
+  if (otpValue.value.length !== 6) {
+    return;
+  }
+
+  emit("next", {
+    otp: otpValue.value,
+  });
+}
+
+defineExpose({
+  startCountdown: () => startCountdown(30),
+  setError: (error) => {
+    errorMessages.value = error;
+  },
+});
 </script>
 
 <style scoped></style>

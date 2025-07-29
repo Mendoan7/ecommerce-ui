@@ -16,10 +16,20 @@
         >
           <h2>Daftar</h2>
           <form class="mt-7 space-y-7" @submit.prevent="handleSubmit">
-            <UFormGroup>
-              <UInput placeholder="Email" size="lg" />
+            <UFormGroup :error="v$.email.$errors?.[0]?.$message">
+              <UInput
+                v-model="registerForm.email"
+                placeholder="Email"
+                size="lg"
+              />
             </UFormGroup>
-            <UButton type="submit" block class="uppercase">Berikutnya</UButton>
+            <UButton
+              :loading="status === 'pending'"
+              type="submit"
+              block
+              class="uppercase"
+              >Berikutnya</UButton
+            >
           </form>
           <UDivider
             label="ATAU"
@@ -28,10 +38,7 @@
               label: 'text-gray-300 font-normal',
             }"
           />
-          <UButton block color="white">
-            <img src="~/assets/images/google.png" class="w-6 h-6" />
-            Google
-          </UButton>
+          <BaseButtonGoogleSignIn />
           <p class="text-sm font-normal text-black/25 text-center mt-8">
             Punya akun?
             <NuxtLink to="/login" class="text-primary">Log in</NuxtLink>
@@ -43,17 +50,51 @@
 </template>
 
 <script setup>
+import useVuelidate from "@vuelidate/core";
+import { email, required } from "@vuelidate/validators";
+
 definePageMeta({
   layout: "auth",
   header: {
     title: "Daftar",
   },
+  middleware: ["must-not-auth"],
 });
 
 const router = useRouter();
+const { registerForm } = storeToRefs(useSession());
 
-function handleSubmit() {
-  router.push("/register/form");
+const rules = {
+  email: { required, email },
+};
+
+const $externalResults = ref({});
+
+const v$ = useVuelidate(rules, registerForm, {
+  $autoDirty: true,
+  $externalResults,
+});
+
+const { status, error, execute } = useSubmit("/server/api/register");
+
+async function handleSubmit() {
+  $externalResults.value = {};
+
+  const isValid = await v$.value.$validate();
+  if (!isValid) return;
+
+  await execute({
+    email: registerForm.value.email,
+  });
+
+  if (error.value) {
+    $externalResults.value = error.value.data?.meta?.validations || {};
+    return;
+  }
+
+  if (status.value === "success") {
+    router.push("/register/form");
+  }
 }
 </script>
 
