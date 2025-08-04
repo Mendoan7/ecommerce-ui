@@ -28,7 +28,8 @@
         color="white"
         size="xs"
         :disabled="item.is_default"
-        @click="emit('change:status', item)"
+        :loading="status === 'pending'"
+        @click="handleUpdateDefaultAddress"
       >
         Atur sebagai utama
       </UButton>
@@ -40,7 +41,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   item: {
     type: Object,
     default: () => ({}),
@@ -48,6 +49,19 @@ defineProps({
 });
 
 const emit = defineEmits(["change", "change:status"]);
+
+const { execute, status } = useSubmit(
+  computed(() => `/server/api/address/${props.item.uuid}/set-default`)
+);
+
+async function handleUpdateDefaultAddress() {
+  if (props.item.is_default) return;
+  await execute();
+
+  if (status.value === "success") {
+    refreshNuxtData("address-list");
+  }
+}
 </script>
 
 <style scoped></style>

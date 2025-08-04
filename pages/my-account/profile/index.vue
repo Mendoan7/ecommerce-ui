@@ -2,7 +2,7 @@
   <div>
     <h3 class="font-medium text-lg">Profil Saya</h3>
     <p class="text-sm text-black/65">
-      Kelola informasi profil Anda untuk mengontrol, melindungi dan mengamankan
+      Kelola informasi profilmu untuk mengontrol, melindungi dan mengamankan
       akun
     </p>
     <hr class="mt-5 mb-8 border-gray-200/60" />

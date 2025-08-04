@@ -48,7 +48,7 @@ const links = [
       },
       {
         label: "Alamat",
-        to: "/my-account/address",
+        to: "/my-account/addresses",
       },
       {
         label: "Ubah Password",

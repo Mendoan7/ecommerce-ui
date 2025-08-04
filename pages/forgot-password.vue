@@ -4,8 +4,11 @@
       <UCard class="max-w-[500px] mx-auto auth-shadow">
         <component
           :is="forgotPasswordStep[stepActive].component"
-          @next="handleNext(forgotPasswordStep[stepActive].key)"
+          ref="formStepElement"
+          v-bind="customProps"
+          @next="handleNext(forgotPasswordStep[stepActive].key, $event)"
           @back="handleBack(forgotPasswordStep[stepActive].key)"
+          @resend="handleResendOtp"
         />
       </UCard>
     </UContainer>
@@ -22,10 +25,15 @@ definePageMeta({
     title: "Reset Password",
   },
 });
-
+const nuxtAppp = useNuxtApp();
 const router = useRouter();
 
 const stepActive = ref(0);
+
+const formStepElement = ref();
+
+const session = useSession();
+const { registerForm, token, profile, tokenCookie } = storeToRefs(session);
 
 const forgotPasswordStep = [
   {
@@ -42,12 +50,145 @@ const forgotPasswordStep = [
   },
 ];
 
-function handleNext(stepKey) {
-  if (stepKey === "password") {
-    alert("Success reset password");
-    return router.push("/login");
+const {
+  execute: request,
+  status: statusRequest,
+  error: errorRequest,
+} = useSubmit("/server/api/forgot-password/request");
+
+const {
+  execute: validateOtp,
+  status: statusValidateOtp,
+  error: errorValidateOtp,
+} = useSubmit("/server/api/forgot-password/check-otp");
+const { execute: resendOtp, status: statusResendOtp } = useSubmit(
+  "/server/api/forgot-password/resend-otp",
+  {
+    onResponse({ response }) {
+      if (response.ok) {
+        formStepElement.value.startCountdown();
+      }
+    },
   }
-  stepActive.value++;
+);
+function handleResendOtp() {
+  resendOtp({
+    email: registerForm.value.email,
+  });
+}
+
+const {
+  execute: resetPassword,
+  status: statusResetPassword,
+  error: errorResetPassword,
+  data: dataResetPassword,
+} = useSubmit("/server/api/forgot-password/reset-password");
+
+const { execute: getProfile, status: statusProfile } = useApi(
+  "/server/api/profile",
+  {
+    immediate: false,
+    onResponse({ response }) {
+      if (response.ok) {
+        profile.value = response._data.data;
+        session.resetRegisterForm();
+        nuxtAppp.runWithContext(() => {
+          navigateTo("/my-account/profile");
+        });
+      }
+    },
+  }
+);
+
+const customProps = computed(() => {
+  switch (forgotPasswordStep[stepActive.value].key) {
+    case "forgot-password":
+      return {
+        loading: statusRequest.value === "pending",
+      };
+    case "otp":
+      return {
+        loading: statusValidateOtp.value === "pending",
+        loadingResend: statusResendOtp.value === "pending",
+      };
+
+    case "password":
+      return {
+        loading:
+          statusResetPassword.value === "pending" ||
+          statusProfile.value === "pending",
+      };
+
+    default:
+      return {};
+  }
+});
+
+async function handleNext(stepKey, value) {
+  switch (stepKey) {
+    case "forgot-password":
+      await request({
+        email: value.email,
+      });
+      if (errorRequest.value) {
+        formStepElement.value.setError(
+          errorRequest.value.data?.meta?.validations || {}
+        );
+        return;
+      }
+      if (statusRequest.value === "success") {
+        registerForm.value.email = value.email;
+        stepActive.value++;
+      }
+      break;
+
+    case "otp":
+      await validateOtp({
+        email: registerForm.value.email,
+        otp: value.otp,
+      });
+      if (errorValidateOtp.value) {
+        formStepElement.value.setError(
+          errorValidateOtp.value.data?.meta?.validations?.otp?.[0]
+        );
+        return;
+      }
+      if (statusValidateOtp.value === "success") {
+        registerForm.value.otp = value.otp;
+        stepActive.value++;
+      }
+      break;
+
+    case "password":
+      await resetPassword({
+        email: registerForm.value.email,
+        otp: registerForm.value.otp,
+        password: value.password,
+        password_confirmation: value.password,
+      });
+
+      if (errorResetPassword.value) {
+        formStepElement.value.setError(
+          error.value.data?.meta?.validations || {}
+        );
+        return;
+      }
+
+      if (statusResetPassword.value === "success") {
+        registerForm.value.password = value.password;
+        registerForm.value.password_confirmation = value.password;
+
+        token.value = dataResetPassword.value.data?.token;
+        tokenCookie.value = dataResetPassword.value.data?.token;
+
+        getProfile();
+      }
+      break;
+
+    default:
+      stepActive.value++;
+      break;
+  }
 }
 
 function handleBack(stepKey) {

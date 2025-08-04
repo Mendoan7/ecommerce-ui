@@ -39,23 +39,38 @@
           }"
         >
           <template #item="{ item }">
-            <template v-if="options[item.key].length">
-              <UButton
-                v-for="child in options[item.key]"
-                :key="child.uuid"
-                variant="ghost"
-                block
-                :color="
-                  form[item.key]?.uuid === child.uuid ? 'primary' : 'gray'
+            <div class="max-h-96 overflow-y-auto">
+              <div
+                v-if="
+                  statusProvince === 'pending' || statusCities === 'pending'
                 "
-                class="justify-start"
-                :label="child.name"
-                @click="handleSelect(child, item.key, close)"
-              />
-            </template>
-            <p v-else class="text-center my-3 text-black/40">
-              Tidak ada data ditemukan
-            </p>
+                class="space-y-3 p-2"
+              >
+                <USkeleton class="h-4" />
+                <USkeleton class="h-4" />
+                <USkeleton class="h-4" />
+                <USkeleton class="h-4" />
+              </div>
+              <template v-else>
+                <template v-if="options[item.key].length">
+                  <UButton
+                    v-for="child in options[item.key]"
+                    :key="child.uuid"
+                    variant="ghost"
+                    block
+                    :color="
+                      form[item.key]?.uuid === child.uuid ? 'primary' : 'gray'
+                    "
+                    class="justify-start"
+                    :label="child.name"
+                    @click="handleSelect(child, item.key, close)"
+                  />
+                </template>
+                <p v-else class="text-center my-3 text-black/40">
+                  Tidak ada data yang ditemukan
+                </p>
+              </template>
+            </div>
           </template>
         </UTabs>
       </div>
@@ -70,6 +85,23 @@ defineProps({
     default: "Provinsi, Kota",
   },
 });
+const nuxtApp = useNuxtApp();
+
+const modelCity = defineModel("city", {
+  type: Object,
+  default: () => ({
+    uuid: null,
+    name: null,
+  }),
+});
+
+const modelProvince = defineModel("province", {
+  type: Object,
+  default: () => ({
+    uuid: null,
+    name: null,
+  }),
+});
 
 const tabActive = ref(0);
 const form = reactive({
@@ -77,9 +109,31 @@ const form = reactive({
   city: null,
 });
 
-const showSelected = computed(
-  () => `${form.province?.name || ""} ${form.city?.name || ""}`
+watch(
+  modelCity,
+  (newCity) => {
+    form.city = {
+      uuid: newCity?.uuid,
+      name: newCity?.name,
+    };
+  },
+  { immediate: true }
 );
+
+watch(
+  modelProvince,
+  (newProvince) => {
+    form.province = {
+      uuid: newProvince?.uuid,
+      name: newProvince?.name,
+    };
+  },
+  { immediate: true }
+);
+
+const showSelected = computed(() => {
+  return [form.province?.name, form.city?.name].filter(Boolean).join(", ");
+});
 
 const items = computed(() => [
   {
@@ -98,38 +152,32 @@ const options = computed(() => ({
   province: provinces.value,
 }));
 
-const provinces = computed(() => [
+const { data: responseProvince, status: statusProvince } = useApi(
+  "/server/api/province",
   {
-    uuid: "ee236b0c-2f1d-4a8e-9f3c-5b6d7e8f9a0b",
-    name: "Bali",
-  },
-  {
-    uuid: "f4b5c6d7-e8f9-0a1b-2c3d-4e5f6g7h8i9h",
-    name: "Jawa Barat",
-  },
-  {
-    uuid: "f4b5c6d7-e8f9-0a1b-2c3d-4e5f6g7h8i9g",
-    name: "Jawa Timur",
-  },
-  {
-    uuid: "f4b5c6d7-e8f9-0a1b-2c3d-4e5f6g7h9i9j",
-    name: "DKI Jakarta",
-  },
-]);
-
-const cities = computed(() =>
-  [
-    {
-      uuid: "f4b5c6d7-e8f9-0a1b-2c3d-4e5f6g7h8i9k",
-      province: {
-        uuid: "f4b5c6d7-e8f9-0a1b-2c3d-4e5f6g7h8i9g",
-        name: "Jawa Timur",
-      },
-      external_id: "104",
-      name: "Kediri",
+    key: "province-list",
+    getCachedData() {
+      return (
+        nuxtApp.payload.data?.["province-list"] ||
+        nuxtApp.static.data?.["province-list"]
+      );
     },
-  ].filter((item) => item.province.uuid === form.province?.uuid)
+  }
 );
+
+const { data: responseCities, status: statusCities } = useApi(
+  "/server/api/city",
+  {
+    immediate: false,
+    params: computed(() => ({
+      province_uuid: form.province?.uuid,
+    })),
+  }
+);
+
+const provinces = computed(() => responseProvince.value?.data || []);
+
+const cities = computed(() => responseCities.value?.data || []);
 
 async function handleSelect(value, type, close) {
   form[type] = value;
@@ -139,6 +187,14 @@ async function handleSelect(value, type, close) {
     form.city = null;
     tabActive.value = 1;
   } else {
+    modelCity.value = {
+      uuid: form.city.uuid,
+      name: form.city.name,
+    };
+    modelProvince.value = {
+      uuid: form.province.uuid,
+      name: form.province.name,
+    };
     tabActive.value = 0;
     close();
   }
@@ -154,4 +210,4 @@ function handleCheckSelected(isOpen) {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>
