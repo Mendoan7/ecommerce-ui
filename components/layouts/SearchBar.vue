@@ -1,19 +1,21 @@
 <template>
-  <div
+  <form
     :class="[
       'searchbar',
       {
         'no-padded': !padded,
       },
     ]"
+    @submit.prevent="handleSearch"
   >
-    <input placeholder="Cek barang apa yang kamu cari" />
+    <input v-model="searchInput" placeholder="Cek barang apa yang kamu cari" />
     <UButton
+      type="submit"
       icon="i-heroicons:magnifying-glass"
       class="px-6"
       v-bind="attribute"
     />
-  </div>
+  </form>
 </template>
 
 <script setup>
@@ -23,6 +25,11 @@ const props = defineProps({
     default: true,
   },
 });
+
+const router = useRouter();
+const route = useRoute();
+
+const searchInput = ref(route.query?.search || "");
 
 const attribute = computed(() => {
   if (!props.padded) {
@@ -34,6 +41,23 @@ const attribute = computed(() => {
   }
   return {};
 });
+
+watch(
+  () => route.query.search,
+  (newSearch) => {
+    searchInput.value = newSearch;
+  }
+);
+
+function handleSearch() {
+  router.push({
+    path: "/search",
+    query: {
+      ...route.query,
+      search: searchInput.value,
+    },
+  });
+}
 </script>
 
 <style scoped>
