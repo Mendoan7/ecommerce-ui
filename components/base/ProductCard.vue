@@ -1,9 +1,9 @@
 <template>
-  <NuxtLink class="product-card" to="`/products/${slug}`">
+  <NuxtLink class="product-card" :to="`/products/${slug}`">
     <div v-if="discount" class="product-discount">
       -{{ formattedDiscount }}%
     </div>
-    <img src="~/assets/images/sepatu.webp" />
+    <NuxtImg :src="image" format="webp" />
     <div class="product-card-details">
       <p>
         {{ title }}

@@ -9,11 +9,23 @@
     class="max-h-[450px] aspect-[1/1]"
   >
     <template #default="{ item }">
-      <img
-        :src="item"
+      <NuxtImg
+        v-if="item.type === 'img'"
+        :src="item.src"
         class="w-full aspect-[1/1] object-cover"
         draggable="false"
+        format="webp"
       />
+      <video
+        v-if="item.type === 'video'"
+        class="w-full aspect-[1/1] object-cover"
+        autoplay
+        muted
+        controls
+      >
+        <source :src="item.src" type="video/mp4" />
+        <p>Your browser does not support the video tag.</p>
+      </video>
     </template>
   </UCarousel>
   <div class="mt-3">
@@ -37,8 +49,23 @@
       class="max-w-[450px]"
     >
       <template #default="{ item, index }">
-        <img
-          :src="item"
+        <NuxtImg
+          v-if="item.type === 'img'"
+          :src="item.src"
+          class="max-w-[82px] aspect-[1/1] m-1 object-cover"
+          :class="[
+            carouselElement?.page === index + 1
+              ? 'ring-2 ring-primary'
+              : 'ring-0',
+          ]"
+          role="button"
+          format="webp"
+          @click="carouselElement?.select(index + 1)"
+        />
+
+        <video
+          v-if="item.type === 'video'"
+          :src="item.src"
           class="max-w-[82px] aspect-[1/1] m-1 object-cover"
           :class="[
             carouselElement?.page === index + 1
