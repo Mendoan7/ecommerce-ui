@@ -13,23 +13,46 @@
       <div class="space-y-6">
         <div class="flex gap-4 items-center">
           <UInput
+            v-model="formFilter.search"
             leading-icon="i-heroicons:magnifying-glass"
             class="flex-1"
             placeholder="Cari Nama Produk, SKU Induk, Kode Variasi, ID Produk"
           />
           <USelectMenu
-            :options="[]"
+            v-model="formFilter.category"
+            :options="optionsCategories"
             placeholder="Cari berdasarkan kategori"
             class="flex-1"
+            :loading="statusCategory === 'pending'"
+            :disabled="statusCategory === 'pending'"
+            value-attribute="slug"
+            option-attribute="name"
           />
-          <UButton size="xs" label="Terapkan" variant="outline" />
-          <UButton size="xs" label="Atur Ulang" color="white" />
+          <UButton
+            size="xs"
+            label="Terapkan"
+            variant="outline"
+            @click="applyFilter"
+          />
+          <UButton
+            size="xs"
+            label="Atur Ulang"
+            color="white"
+            @click="resetFilter"
+          />
         </div>
-        <p class="text-lg font-medium">0 Produk</p>
+        <p v-if="status !== 'pending'" class="text-lg font-medium">
+          {{ data?.total || 0 }} Produk
+        </p>
         <BaseDataTable
+          v-model:page="pagination.page"
           :columns="columns"
           :rows="products"
           empty-text="Produk Tidak Ditemukan"
+          :loading="status === 'pending'"
+          :total="data?.total"
+          :per-page="pagination.per_page"
+          @update:page="execute"
         >
           <template #name-data="{ row }">
             <div class="flex gap-2">
@@ -52,6 +75,7 @@
                 :padded="false"
                 color="blue"
                 label="Ubah"
+                :disabled="statusDelete === 'pending'"
                 @click="handleEdit(row)"
               />
               <UButton
@@ -59,6 +83,8 @@
                 :padded="false"
                 color="blue"
                 label="Hapus"
+                :disabled="statusDelete === 'pending' && deleteId === row.uuid"
+                @click="handleDelete(row)"
               />
             </div>
           </template>
@@ -70,7 +96,20 @@
 </template>
 
 <script setup>
+const nuxtApp = useNuxtApp();
 const router = useRouter();
+
+const formFilter = ref({
+  search: undefined,
+  category: undefined,
+});
+const pagination = ref({
+  page: 1,
+  per_page: 10,
+});
+
+const deleteId = ref();
+
 const columns = [
   {
     key: "name",
@@ -93,96 +132,99 @@ const columns = [
     label: "Aksi",
   },
 ];
-const products = [
-  {
-    uuid: "ebc983cc-8010-11ef-9abb-3dda8f3f8c01",
-    name: "Produk 4",
-    slug: "produk-4",
-    price: 67377,
-    price_sale: null,
-    stock: 7,
-    category: {
-      slug: "laptop",
-      name: "Laptop",
-      description: null,
-      parent: {
-        slug: "komputer-laptop",
-        name: "Komputer & Laptop",
-        description: null,
-      },
-    },
-    description: "Deskripsi produk 4. Lorem ipsum bla bla bla",
-    weight: 73,
-    length: 36,
-    width: 88,
-    height: 10,
-    video_url: "http://localhost:8000/storage/attachment.mp4",
-    sale_count: 0,
-    images: [
-      "https://picsum.photos/1920/1080?random=1",
-      "http://localhost:8000/storage/attachment2.jpg",
-      "http://localhost:8000/storage/attachment4.jpg",
-      "http://localhost:8000/storage/attachment1.jpg",
-    ],
-    variations: [
-      {
-        name: "Warna",
-        values: ["Hitam", "Kuning", "Biru"],
-      },
-      {
-        name: "Ukuran",
-        values: ["M", "L", "XL"],
-      },
-    ],
-  },
-  {
-    uuid: "ebcd89cc-8010-11ef-9abb-3dda8f3f8c01",
-    name: "Produk 9",
-    slug: "produk-9",
-    price: 33974,
-    price_sale: 30000,
-    stock: 84,
-    category: {
-      slug: "dress",
-      name: "Dress",
-      description: null,
-      parent: {
-        slug: "fashion-wanita",
-        name: "Fashion Wanita",
-        description: null,
-      },
-    },
-    description: "Deskripsi produk 9. Lorem ipsum bla bla bla",
-    weight: 70,
-    length: 30,
-    width: 12,
-    height: 58,
-    video_url: "http://localhost:8000/storage/attachment.mp4",
-    sale_count: 0,
-    images: [
-      "https://picsum.photos/1920/1080?random=2",
-      "http://localhost:8000/storage/attachment1.jpg",
-      "http://localhost:8000/storage/attachment2.jpg",
-      "http://localhost:8000/storage/attachment4.jpg",
-    ],
-    variations: [
-      {
-        name: "Ukuran",
-        values: ["M", "L", "XL"],
-      },
-      {
-        name: "Warna",
-        values: ["Hitam", "Kuning", "Biru"],
-      },
-    ],
-  },
-];
 
+const { data: categories, status: statusCategory } = useApi(
+  "/server/api/category",
+  {
+    key: "category-list",
+    transform(response) {
+      return (response?.data || []).reduce((result, parent) => {
+        result.push(
+          ...parent.childs.map((child) => ({
+            ...child,
+            icon: parent.icon,
+            name: `${parent.name} - ${child.name}`,
+          }))
+        );
+        return result;
+      }, []);
+    },
+    getCachedData() {
+      return (
+        nuxtApp.payload.data?.["category-list"] ||
+        nuxtApp.static.data?.["category-list"]
+      );
+    },
+  }
+);
+
+const { data, status, execute } = useApi(
+  "/server/api/seller-dashboard/product",
+  {
+    key: "product-seller",
+    params: computed(() => {
+      return {
+        ...pagination.value,
+        ...formFilter.value,
+      };
+    }),
+    transform(response) {
+      return response?.data || {};
+    },
+    watch: false,
+  }
+);
+
+const { execute: deleteProduct, status: statusDelete } = useSubmit(
+  computed(() => `/server/api/seller-dashboard/product/${deleteId.value}`),
+  {
+    method: "DELETE",
+    onResponse({ response }) {
+      if (response.ok) {
+        refreshNuxtData("product-seller");
+        deleteId.value = null;
+      }
+    },
+  }
+);
+
+const optionsCategories = computed(() =>
+  categories.value?.map((item) => ({ ...item, icon: undefined }))
+);
+
+const products = computed(() => data.value?.data || []);
 function handleEdit(row) {
   router.push({
     path: `/seller/product/edit/${row.uuid}`,
-    state: row,
+    state: { product: JSON.stringify(row) },
   });
+}
+
+function handleDelete(row) {
+  const confirm = window.confirm("Anda yakin untuk menghapus produk ini?");
+  if (!confirm) return;
+  // hit api
+  deleteId.value = row.uuid;
+  deleteProduct();
+}
+
+function applyFilter() {
+  // reset pagination 1
+  pagination.value.page = 1;
+  // hit api
+  execute();
+}
+
+function resetFilter() {
+  // reset pagination 1
+  pagination.value.page = 1;
+  // reset formFilter default value
+  formFilter.value = {
+    search: undefined,
+    category: undefined,
+  };
+  // hit api
+  execute();
 }
 </script>
 
