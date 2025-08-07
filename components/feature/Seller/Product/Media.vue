@@ -1,18 +1,20 @@
 <template>
   <div class="flex gap-4 flex-wrap">
     <template v-if="attachments.length < max">
-      <div
-        role="button"
-        class="rounded border-2 border-dashed p-3 flex items-center justify-center flex-col gap-1 w-20 h-20 text-primary"
-        @click="handleChooseFile"
-      >
-        <UIcon :name="icon" class="w-6" />
-        <p class="text-center text-xs">
-          Tambahkan {{ type === "image" ? "Foto" : "Video" }} ({{
-            attachments.length
-          }}/{{ max }})
-        </p>
-      </div>
+      <slot name="activator" :on-choose-file="handleChooseFile">
+        <div
+          role="button"
+          class="rounded border-2 border-dashed p-3 flex items-center justify-center flex-col gap-1 w-20 h-20 text-primary"
+          @click="handleChooseFile"
+        >
+          <UIcon :name="icon" class="w-6" />
+          <p class="text-center text-xs">
+            Tambahkan {{ type === "image" ? "Foto" : "Video" }} ({{
+              attachments.length
+            }}/{{ max }})
+          </p>
+        </div>
+      </slot>
       <input
         ref="inputFileElement"
         type="file"
@@ -69,7 +71,10 @@ const accept = {
   video: ".mp4",
 };
 
-const attachments = ref([]);
+const attachments = defineModel({
+  type: Array,
+  default: () => [],
+});
 const inputFileElement = ref();
 
 function handleChooseFile() {
@@ -98,6 +103,7 @@ function handleDelete(index) {
 }
 
 function generateImage(img) {
+  if (typeof img === "string") return img;
   return window.URL.createObjectURL(img);
 }
 </script>

@@ -2,16 +2,20 @@
   <div class="p-4 bg-gray-100 rounded-sm">
     <div class="flex justify-between items-center">
       <div>
-        <UInput
+        <UFormGroup
           v-if="isEditVariantName"
-          v-model="variantName"
-          autofocus
-          placeholder="Variant Name"
-          @blur="handleSaveVariantName"
-        />
+          :error="v$.name.$errors?.[0]?.$message"
+        >
+          <UInput
+            v-model="variantName"
+            autofocus
+            placeholder="Variant Name"
+            @blur="handleSaveVariantName"
+          />
+        </UFormGroup>
         <div v-else class="flex gap-1">
-          <span class="text-sm"
-            >{{ variantName }}
+          <span class="text-sm">
+            {{ variantName }}
             <span class="text-black/30 text-xs">(Atur Sendiri)</span></span
           >
           <UButton
@@ -31,23 +35,26 @@
         @click="emit('delete')"
       />
     </div>
+    <hr class="my-4" />
     <div class="grid grid-cols-2 gap-4 mt-4">
-      <div
+      <UFormGroup
         v-for="(varValue, index) in variantValue"
         :key="`variant-${index}`"
-        class="flex gap-2"
+        :error="v$.value.$each.$response.$errors?.[index]?.name?.[0]?.$message"
       >
-        <UInput v-model="varValue.name" class="flex-1" />
-        <UButton
-          v-if="variantValue.length > 1"
-          icon="i-heroicons:trash"
-          :padded="false"
-          size="xs"
-          variant="link"
-          color="gray"
-          @click="handleRemoveVariantValue(index)"
-        />
-      </div>
+        <div class="flex gap-2">
+          <UInput v-model="varValue.name" class="flex-1" />
+          <UButton
+            v-if="variantValue.length > 1"
+            icon="i-heroicons:trash"
+            :padded="false"
+            size="xs"
+            variant="link"
+            color="gray"
+            @click="handleRemoveVariantValue(index)"
+          />
+        </div>
+      </UFormGroup>
     </div>
     <UButton
       icon="i-heroicons:plus"
@@ -61,6 +68,9 @@
 </template>
 
 <script setup>
+import useVuelidate from "@vuelidate/core";
+import { helpers, required } from "@vuelidate/validators";
+
 const emit = defineEmits(["delete"]);
 const variantName = defineModel({
   type: String,
@@ -71,6 +81,23 @@ const variantValue = defineModel("value", {
   type: Array,
   default: () => [],
 });
+
+const rules = {
+  name: { required },
+  value: {
+    $each: helpers.forEach({
+      name: { required },
+    }),
+  },
+};
+const v$ = useVuelidate(
+  rules,
+  computed(() => ({ name: variantName.value, value: variantValue.value })),
+  {
+    $autoDirty: true,
+    $scope: "product",
+  }
+);
 
 const isEditVariantName = ref(true);
 

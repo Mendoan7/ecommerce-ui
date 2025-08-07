@@ -59,7 +59,7 @@
         <SellerFormGroup
           label="Deskripsi Produk"
           required
-          :help="`${form.description.length}/3000`"
+          :help="`${form.description.length}/1000`"
           :error="v$.description.$errors?.[0]?.$message"
         >
           <UTextarea v-model="form.description" size="lg" />
@@ -100,7 +100,7 @@
         <SellerFormGroup label="Variasi">
           <div class="space-y-4">
             <FeatureSellerProductVariant
-              v-for="(variant, index) in variations"
+              v-for="(variant, index) in form.variations"
               :key="`variations-${index}`"
               v-model="variant.name"
               v-model:value="variant.value"
@@ -115,7 +115,7 @@
                 icon="i-heroicons:plus"
                 @click="handleAddVariations"
               >
-                Tambah Variasi {{ variations.length + 1 }}
+                Tambah Variasi {{ form.variations.length + 1 }}
               </UButton>
             </div>
           </div>
@@ -266,7 +266,7 @@ const rules = computed(() => ({
     minValue: minValue(1),
   },
   category_slug: { required },
-  description: { required, maxLength: maxLength(3000) },
+  description: { required, maxLength: maxLength(1000) },
   weight: { required },
   length: { required },
   width: { required },
@@ -276,8 +276,7 @@ const rules = computed(() => ({
     minLength: minLength(1),
   },
   video: {
-    required,
-    minLength: minLength(1),
+    nullable: true,
   },
 }));
 
@@ -352,7 +351,7 @@ const optionsCategories = computed(() =>
 );
 
 function handleAddVariations() {
-  variations.value.push({
+  form.value.variations.push({
     name: "",
     value: [{ name: "" }],
   });

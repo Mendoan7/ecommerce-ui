@@ -10,14 +10,17 @@ export default defineNuxtRouteMiddleware(async () => {
     session.token = session.tokenCookie;
 
     if (!session.profile.email) {
-      const { data, error } = await useApi("/server/api/profile");
+      const { error } = await useApi("/server/api/profile", {
+        key: "profile",
+        onResponse({ response }) {
+          if (response.ok) {
+            session.profile = response._data.data;
+          }
+        },
+      });
 
       if (error.value) {
         return session.logout();
-      }
-
-      if (data.value) {
-        session.profile = data.value.data;
       }
     }
   }
