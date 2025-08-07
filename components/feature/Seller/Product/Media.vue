@@ -67,7 +67,7 @@ const props = defineProps({
 });
 
 const accept = {
-  image: ".jpeg,.png",
+  image: ".webp,.jpeg,.jpg,.png",
   video: ".mp4",
 };
 
@@ -103,8 +103,14 @@ function handleDelete(index) {
 }
 
 function generateImage(img) {
+  if (!img) return "";
   if (typeof img === "string") return img;
-  return window.URL.createObjectURL(img);
+  if (img instanceof File || img instanceof Blob) {
+    const url = URL.createObjectURL(img);
+    return url;
+  }
+  console.warn("Unsupported media type:", img);
+  return "";
 }
 </script>
 
