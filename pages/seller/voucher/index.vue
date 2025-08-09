@@ -6,7 +6,8 @@
       >
     </template>
     <BaseTabs
-      :items="status"
+      v-model="formFilter.status"
+      :items="tabs"
       :ui="{
         wrapper: 'border-b border-gray-100',
         list: {
@@ -17,14 +18,23 @@
         },
       }"
       :content="false"
+      @update:model-value="handleFilter"
     />
     <div class="mt-8 space-y-4 text-sm">
-      <form class="flex gap-3 items-center">
+      <form class="flex gap-3 items-center" @submit.prevent="handleFilter">
         <span>Cari</span>
-        <UInput placeholder="Input" class="w-80" />
-        <UButton variant="outline" size="xs"> Cari </UButton>
+        <UInput v-model="formFilter.search" placeholder="Input" class="w-80" />
+        <UButton type="submit" variant="outline" size="xs"> Cari </UButton>
       </form>
-      <BaseDataTable :rows="items" :columns="columns">
+      <BaseDataTable
+        v-model:page="pagination.page"
+        :total="data?.total || 0"
+        :per-page="pagination.per_page"
+        :rows="items"
+        :columns="columns"
+        :loading="status === 'pending'"
+        @update:page="execute"
+      >
         <template #name-data="{ row }">
           <div class="flex gap-2">
             <img
@@ -37,6 +47,7 @@
             />
             <div class="flex flex-col items-start gap-0.5">
               <UBadge
+                v-if="checkExpired(row.end_date)"
                 label="Telah Berakhir"
                 color="gray"
                 size="xs"
@@ -53,6 +64,9 @@
               <span class="text-sm">KODE:{{ row.code }}</span>
             </div>
           </div>
+        </template>
+        <template #end_date-data="{ row }">
+          {{ formatDate(row.start_date) }} - {{ formatDate(row.end_date) }}
         </template>
         <template #discount-data="{ row }">
           <p>
@@ -74,6 +88,7 @@
               variant="link"
               color="blue"
               :padded="false"
+              :disabled="statusDelete === 'pending'"
               @click="handleEdit(row)"
             />
             <UButton
@@ -81,6 +96,8 @@
               variant="link"
               color="blue"
               :padded="false"
+              :loading="statusDelete === 'pending' && deleteId === row.uuid"
+              @click="handleDelete(row)"
             />
           </div>
         </template>
@@ -93,6 +110,7 @@
 import VoucherCoin from "~/assets/images/voucher-cashback-coin.png";
 import VoucherPercentage from "~/assets/images/voucher-percentage.png";
 import VoucherFixed from "~/assets/images/voucher-fixed.png";
+import { format, isPast } from "date-fns";
 
 const router = useRouter();
 
@@ -102,7 +120,8 @@ const image = {
   fixed: VoucherFixed,
 };
 
-const status = [
+// filter
+const tabs = [
   {
     label: "Semua",
     key: "all",
@@ -131,8 +150,8 @@ const columns = [
     label: "Diskon",
   },
   {
-    key: "discount_cashback_max",
-    label: "Batas Pemakaian",
+    key: "end_date",
+    label: "Masa Berlaku",
   },
   {
     key: "used_count",
@@ -144,66 +163,77 @@ const columns = [
   },
 ];
 
-const items = [
+const formFilter = ref({
+  status: 0,
+  search: undefined,
+});
+const pagination = ref({
+  page: 1,
+  per_page: 10,
+});
+const deleteId = ref();
+
+const { data, status, execute } = useApi(
+  "/server/api/seller-dashboard/voucher",
   {
-    uuid: "9875b0fc-82df-11ef-bdf6-b1d00190d36e",
-    code: "DISCOUNT10000",
-    name: "Discount 10000",
-    used_count: 0,
-    is_public: true,
-    voucher_type: "discount",
-    discount_cashback_type: "fixed",
-    discount_cashback_value: 10000,
-    discount_cashback_max: 100,
-    start_date: "2024-10-05 06:03:51",
-    end_date: "2024-10-12 06:03:51",
-  },
+    key: "voucher-seller",
+    params: computed(() => {
+      return {
+        ...pagination.value,
+        ...formFilter.value,
+        status: formFilter.value.status
+          ? tabs[formFilter.value.status].key
+          : undefined,
+      };
+    }),
+    transform(response) {
+      return response?.data || {};
+    },
+    watch: false,
+  }
+);
+
+const { execute: deleteVoucher, status: statusDelete } = useSubmit(
+  computed(() => `/server/api/seller-dashboard/voucher/${deleteId.value}`),
   {
-    uuid: "9875b0fc-82df-11ef-bdf6-b1d00190d36e",
-    code: "DISCOUNT10000",
-    name: "Discount 10000",
-    used_count: 0,
-    is_public: true,
-    voucher_type: "discount",
-    discount_cashback_type: "percentage",
-    discount_cashback_value: 10,
-    discount_cashback_max: 100,
-    start_date: "2024-10-05 06:03:51",
-    end_date: "2024-10-12 06:03:51",
-  },
-  {
-    uuid: "9875b0fc-82df-11ef-bdf6-b1d00190d36e",
-    code: "DISCOUNT10000",
-    name: "Discount 10000",
-    used_count: 0,
-    is_public: true,
-    voucher_type: "cashback",
-    discount_cashback_type: "fixed",
-    discount_cashback_value: 10000,
-    discount_cashback_max: 100,
-    start_date: "2024-10-05 06:03:51",
-    end_date: "2024-10-12 06:03:51",
-  },
-  {
-    uuid: "9875b0fc-82df-11ef-bdf6-b1d00190d36e",
-    code: "DISCOUNT10000",
-    name: "Discount 10000",
-    used_count: 0,
-    is_public: true,
-    voucher_type: "cashback",
-    discount_cashback_type: "percentage",
-    discount_cashback_value: 10,
-    discount_cashback_max: 100,
-    start_date: "2024-10-05 06:03:51",
-    end_date: "2024-10-12 06:03:51",
-  },
-];
+    method: "DELETE",
+    onResponse({ response }) {
+      if (response.ok) {
+        refreshNuxtData("voucher-seller");
+        deleteId.value = null;
+      }
+    },
+  }
+);
+
+const items = computed(() => data.value?.data || []);
 
 function handleEdit(row) {
   router.push({
     path: `/seller/voucher/edit/${row.uuid}`,
-    state: row,
+    state: { voucher: JSON.stringify(row) },
   });
+}
+
+function handleFilter() {
+  pagination.value.page = 1;
+  execute();
+}
+
+function handleDelete(row) {
+  const confirm = window.confirm(
+    "Apakah Anda yakin ingin menghapus voucher ini?"
+  );
+  if (!confirm) return;
+  deleteId.value = row.uuid;
+  deleteVoucher();
+}
+
+function formatDate(dateString) {
+  return format(new Date(dateString), "dd MMM yyyy");
+}
+function checkExpired(dateString) {
+  return isPast(new Date(dateString));
 }
 </script>
 

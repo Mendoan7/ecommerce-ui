@@ -2,7 +2,8 @@
   <SellerCard title="Pesanan Saya">
     <div class="mt-4 space-y-4">
       <BaseTabs
-        :items="status"
+        v-model="formFilter.last_status"
+        :items="tabs"
         :content="false"
         :ui="{
           wrapper: 'border-b border-gray-100',
@@ -13,14 +14,37 @@
             },
           },
         }"
+        @update:model-value="handleResetFilter"
       />
-      <form class="flex gap-4 items-center">
-        <UInput class="flex-1" placeholder="Masukkan no. pesanan" />
+      <form class="flex gap-4 items-center" @submit.prevent="handleFilter">
+        <UInput
+          v-model="formFilter.search"
+          class="flex-1"
+          placeholder="Masukkan no. pesanan"
+        />
         <UButton label="Terapkan" size="xs" variant="outline" type="submit" />
-        <UButton label="Reset" size="xs" color="white" />
+        <UButton
+          label="Reset"
+          size="xs"
+          color="white"
+          @click="handleResetFilter"
+        />
       </form>
-      <p class="text-lg font-medium">0 Pesanan</p>
-      <BaseDataTable :columns="columns" :rows="orders">
+      <p v-if="status !== 'pending'" class="text-lg font-medium">
+        {{ data?.total || 0 }} Pesanan
+      </p>
+      <BaseDataTable
+        v-model:page="pagination.page"
+        :total="data?.total || 0"
+        :per-page="pagination.per_page"
+        :columns="columns"
+        :rows="orders"
+        :loading="status === 'pending'"
+        @update:page="execute"
+      >
+        <template #[`last_status.status-data`]="{ row }">
+          {{ STATUS_ORDER?.[row.last_status.status] }}
+        </template>
         <template #total-data="{ row }">
           Rp{{ formatNumber(row.total) }}
         </template>
@@ -39,6 +63,8 @@
 </template>
 
 <script setup>
+import { STATUS_ORDER } from "~/constant/status";
+
 definePageMeta({
   breadcrumb: [
     {
@@ -46,7 +72,7 @@ definePageMeta({
     },
   ],
 });
-const status = [
+const tabs = [
   {
     label: "Semua",
     key: "all",
@@ -97,89 +123,44 @@ const columns = [
   },
 ];
 
-const orders = [
-  {
-    uuid: "5f8f599c-83fb-11ef-be4b-1a72ee53d328",
-    invoice_number: "INV-2-20241006155513",
-    buyer: {
-      name: "azizah@gmail.com",
-      email: "azizah@gmail.com",
-      photo_url:
-        "http://localhost:8000/storage/user-photo/iAdzpaTT8wNzF58ZQ67Ys4YwTzFnQHW3tLFY3msm.jpg",
-      username: "azizah",
-      phone: null,
-    },
-    address: {
-      uuid: "8c438746-79c5-11ef-b707-97a05ceb87e2",
-      is_default: true,
-      receiver_name: "Azis Hapidin",
-      receiver_phone: "08888",
-      city: {
-        uuid: "ee8eb26c-78fe-11ef-bd77-9e4478916c69",
-        province: {
-          uuid: "ee8d857c-78fe-11ef-bd77-9e4478916c69",
-          name: "Bali",
-        },
-        external_id: 128,
-        name: "Kabupaten Gianyar",
-      },
-      district: "Bojong",
-      postal_code: "43222",
-      detail_address: "Jl. ABC No. 123",
-      address_note: "Dekat tugu pahlawan",
-      type: "home",
-    },
-    total: 90000,
-    courier: "jne",
-    courier_type: "JTR",
-    items: [
-      {
-        uuid: "5f90214c-83fb-11ef-be4b-1a72ee53d328",
-        product: {
-          uuid: "ebfaf0c4-8010-11ef-9abb-3dda8f3f8c01",
-          name: "Produk 98",
-          slug: "produk-98",
-          price: 10000,
-          price_sale: null,
-          price_discount_percentage: null,
-          sale_count: 9,
-          image_url: "http://localhost:8000/storage/attachment2.jpg",
-          stock: 9,
-        },
-        variations: [
-          {
-            label: "Ukuran",
-            value: "XL",
-          },
-        ],
-        qty: 9,
-        note: "Cepetan yaa min",
-        price: 10000,
-        total: 90000,
-        weight: 3,
-        is_reviewed: false,
-      },
-    ],
-    status: [
-      {
-        status: "pending_payment",
-        description: "Silahkan selesaikan pembayaran Anda",
-        created_at: "2024-10-06 15:55:13",
-      },
-      {
-        status: "paid",
-        description: "Pembayaran berhasil, menunggu proses pengiriman",
-        created_at: "2024-10-06 15:56:59",
-      },
-    ],
-    last_status: {
-      status: "paid",
-      description: "Pembayaran berhasil, menunggu proses pengiriman",
-      created_at: "2024-10-06 15:56:59",
-    },
-    created_at: "2024-10-06 15:55:13",
+const formFilter = ref({
+  search: undefined,
+  last_status: 0,
+});
+const pagination = ref({
+  page: 1,
+  per_page: 10,
+});
+
+const { data, status, execute } = useApi("/server/api/seller-dashboard/order", {
+  key: "order-seller",
+  params: computed(() => {
+    return {
+      ...pagination.value,
+      ...formFilter.value,
+      last_status: formFilter.value.last_status
+        ? tabs[formFilter.value.last_status].key
+        : undefined,
+    };
+  }),
+  transform(response) {
+    return response?.data || {};
   },
-];
+  watch: false,
+});
+
+const orders = computed(() => data.value?.data || []);
+
+function handleFilter() {
+  pagination.value.page = 1;
+  execute();
+}
+
+function handleResetFilter() {
+  pagination.value.page = 1;
+  formFilter.value.search = undefined;
+  execute();
+}
 </script>
 
 <style scoped></style>

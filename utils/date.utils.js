@@ -1,6 +1,7 @@
 import { addDays, format } from "date-fns";
 
-export function getEstimate(numberEstimate) {
+export function getEstimate(numberEstimate, options = {}) {
+  const { returnObject = false } = options;
   const today = new Date();
   const _estimate = (numberEstimate || "").includes("-")
     ? Number(numberEstimate.split("-")[1])
@@ -8,6 +9,12 @@ export function getEstimate(numberEstimate) {
   const futureDateStart = addDays(today, _estimate);
 
   const futureDateEnd = addDays(today, _estimate + 2);
+
+  if (returnObject)
+    return {
+      start: futureDateStart,
+      end: futureDateEnd,
+    };
 
   return `${format(futureDateStart, "d")} - ${format(futureDateEnd, "d MMM")}`;
 }
