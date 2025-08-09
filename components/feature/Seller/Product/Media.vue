@@ -1,6 +1,6 @@
 <template>
   <div class="flex gap-4 flex-wrap">
-    <template v-if="attachments.length < max">
+    <template v-if="!attachments || attachments.length < max">
       <slot name="activator" :on-choose-file="handleChooseFile">
         <div
           role="button"
@@ -10,7 +10,7 @@
           <UIcon :name="icon" class="w-6" />
           <p class="text-center text-xs">
             Tambahkan {{ type === "image" ? "Foto" : "Video" }} ({{
-              attachments.length
+              attachments ? attachments.length : 0
             }}/{{ max }})
           </p>
         </div>
@@ -23,8 +23,10 @@
         @change="handleChangeFile"
       />
     </template>
+
+    <!-- Preview Media -->
     <div
-      v-for="(media, indx) in attachments"
+      v-for="(media, indx) in attachments || []"
       :key="`img-${indx}`"
       class="rounded border-2 w-20 h-20 relative group/photos flex items-center justify-center"
     >
@@ -46,6 +48,7 @@
         />
       </div>
     </div>
+    <!-- End Preview Media -->
   </div>
 </template>
 
@@ -73,8 +76,9 @@ const accept = {
 
 const attachments = defineModel({
   type: Array,
-  default: () => [],
+  default: () => null,
 });
+
 const inputFileElement = ref();
 
 function handleChooseFile() {
@@ -84,9 +88,10 @@ function handleChooseFile() {
 
 function handleChangeFile(event) {
   const file = event.target.files?.[0];
+  if (!file) return;
 
   const allowedExtensions = accept[props.type].split(",");
-  const fileExtension = file.name.split(".").pop();
+  const fileExtension = file.name.split(".").pop().toLowerCase();
 
   if (!allowedExtensions.includes(`.${fileExtension}`)) {
     alert(
@@ -95,12 +100,36 @@ function handleChangeFile(event) {
     return;
   }
 
+  if (!attachments.value) attachments.value = []; // ⬅ kalau awalnya null, jadi array
+
   attachments.value.push(file);
 }
 
 function handleDelete(index) {
+  if (!attachments.value) return;
   attachments.value.splice(index, 1);
+  if (attachments.value.length === 0) attachments.value = null; // ⬅ kalau kosong, balik null
 }
+
+// function handleChangeFile(event) {
+//   const file = event.target.files?.[0];
+
+//   const allowedExtensions = accept[props.type].split(",");
+//   const fileExtension = file.name.split(".").pop();
+
+//   if (!allowedExtensions.includes(`.${fileExtension}`)) {
+//     alert(
+//       `Format file tidak didukung. Silakan upload file ${accept[props.type]}`
+//     );
+//     return;
+//   }
+
+//   attachments.value.push(file);
+// }
+
+// function handleDelete(index) {
+//   attachments.value.splice(index, 1);
+// }
 
 function generateImage(img) {
   if (!img) return "";

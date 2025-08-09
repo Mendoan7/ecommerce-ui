@@ -377,9 +377,22 @@ async function handleSubmit() {
   formData.append("length", form.value.length);
   formData.append("width", form.value.width);
   formData.append("height", form.value.height);
-  if (form.value.video[0] && typeof form.value.video[0] !== "string") {
+  if (
+    form.value.video &&
+    form.value.video.length > 0 &&
+    (form.value.video[0] instanceof File || form.value.video[0] instanceof Blob)
+  ) {
     formData.append("video", form.value.video[0]);
   }
+  // Jika video sudah tidak ada, tapi defaultData.video_url sebelumnya ada
+  if (
+    route.params.productId &&
+    (!form.value.video || form.value.video.length === 0) && // video dihapus dari frontend
+    JSON.parse(router.options.history.state?.product || "{}").video_url // video sebelumnya ada
+  ) {
+    formData.append("remove_video", "1"); // Kirim flag hapus video ke backend
+  }
+  // Tambahkan gambar dan variasi ke FormData
   form.value.images.forEach((img) => {
     formData.append(typeof img === "string" ? "old_images[]" : "images[]", img);
   });
@@ -389,7 +402,7 @@ async function handleSubmit() {
       formData.append(`variations[${index}][values][${idx}]`, value.name);
     });
   });
-
+  // Jika ada productId, berarti update produk
   if (route.params.productId) {
     formData.append("_method", "PATCH");
     updateProduct(formData);
@@ -419,7 +432,7 @@ onMounted(() => {
       length: _defaultData.length,
       width: _defaultData.width,
       height: _defaultData.height,
-      video: [_defaultData.video_url],
+      video: _defaultData.video_url ? [_defaultData.video_url] : null,
       images: _defaultData.images,
       variations: _defaultData.variations.map((variant) => ({
         name: variant.name,

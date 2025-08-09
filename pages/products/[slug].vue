@@ -325,15 +325,15 @@ const v$ = useVuelidate(rules, formProduct, {
 });
 
 // carousel sliders
-const sliders = computed(() => {
-  return [
-    { type: "video", src: detailProduct.value?.video_url },
-    ...(detailProduct.value?.images || []).map((img) => ({
-      type: "img",
-      src: img,
-    })),
-  ];
-});
+const sliders = computed(() => [
+  ...(detailProduct.value?.video_url
+    ? [{ type: "video", src: detailProduct.value.video_url }]
+    : []),
+  ...(detailProduct.value?.images || []).map((img) => ({
+    type: "img",
+    src: img,
+  })),
+]);
 
 const rawPrice = computed(() => formatNumber(detailProduct.value?.price || 0)); // harga asli produk
 const salePrice = computed(() =>
