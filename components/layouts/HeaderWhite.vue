@@ -1,5 +1,5 @@
 <template>
-  <header class="header-white">
+  <header class="header-white" :class="route.meta?.header?.class">
     <LayoutsHeaderProfile v-if="route.meta?.header?.showProfile" />
     <div class="header-bottom">
       <UContainer class="header-bottom-container">

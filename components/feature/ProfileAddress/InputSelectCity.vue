@@ -131,9 +131,9 @@ watch(
   { immediate: true }
 );
 
-const showSelected = computed(() => {
-  return [form.province?.name, form.city?.name].filter(Boolean).join(", ");
-});
+const showSelected = computed(
+  () => `${form.province?.name || ""}${form.city ? `, ${form.city.name}` : ""}`
+);
 
 const items = computed(() => [
   {
