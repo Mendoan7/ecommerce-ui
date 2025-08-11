@@ -16,8 +16,11 @@
               class="object-contain w-3 h-3"
             />
           </div>
-          <BaseRadioCard v-model="courierSelected" :items="items">
-            <template #item="{ label, value, price, selected, onClick }">
+          <BaseLoading
+            v-if="statusJne === 'pending' || statusTiki === 'pending'"
+          />
+          <BaseRadioCard v-else v-model="courierSelected" :items="items">
+            <template #item="{ label, value, price, etd, selected, onClick }">
               <div
                 class="hover:bg-primary-50 border hover:border-primary-200 p-5"
                 :class="[
@@ -30,20 +33,24 @@
               >
                 <div class="flex gap-5 text-sm">
                   <span class="font-medium">{{ label }}</span>
-                  <span>Rp{{ formatNumber(price) }}</span>
+                  <span>Rp{{ price }}</span>
                 </div>
                 <p class="text-xs text-black/60 mt-1">
-                  Garansi tiba: 13-15 Ags
+                  Garansi tiba: {{ etd }}
                 </p>
               </div>
             </template>
           </BaseRadioCard>
         </div>
       </template>
+
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton color="white" @click="isOpen = false">Nanti Saja</UButton>
-          <UButton :disabled="!courierSelected" @click="handleConfirmCourier"
+          <UButton
+            :disabled="!courierSelected"
+            :loading="statusUpdate === 'pending'"
+            @click="handleConfirmCourier"
             >Konfirmasi</UButton
           >
         </div>
@@ -60,28 +67,76 @@ const isOpen = defineModel("open", {
 const model = defineModel({
   type: Object,
 });
-const courierSelected = ref();
+const courierSelected = ref({});
 
-const items = computed(() => [
+const { data: courierTiki, status: statusTiki } = useApi(
+  "/server/api/cart/shipping?courier=tiki"
+);
+const { data: courierJne, status: statusJne } = useApi(
+  "/server/api/cart/shipping?courier=jne"
+);
+
+const { execute, status: statusUpdate } = useSubmit(
+  "/server/api/cart/shipping-fee",
   {
-    label: "Regular",
-    price: "1000",
-    value: "REG",
-    etd: 7,
+    onResponse({ response }) {
+      if (response.ok) {
+        isOpen.value = false;
+        refreshNuxtData("cart");
+      }
+    },
+  }
+);
+
+watch(
+  model,
+  (newCourier) => {
+    if (newCourier?.courier) {
+      courierSelected.value = newCourier;
+    }
   },
-  {
-    label: "Premium",
-    price: "1000",
-    value: "PRE",
-    etd: 7,
-  },
-]);
+  { immediate: true }
+);
+
+const items = computed(() => {
+  // {
+  //   label: "Regular",
+  //   price: "1000",
+  //   value: "REG",
+  //   etd: 7,
+  // },
+  // {
+  //   label: "Premium",
+  //   price: "1000",
+  //   value: "PRE",
+  //   etd: 7,
+  // },
+
+  const tiki = (courierTiki.value?.data?.cost || [])?.map((courier) => ({
+    label: `TIKI - ${courier.service}`,
+    price: formatNumber(courier.value),
+    etd: getEstimate(courier.etd),
+    value: {
+      courier: "tiki",
+      service: courier.service,
+    },
+  }));
+
+  const jne = (courierJne.value?.data?.cost || [])?.map((courier) => ({
+    label: `JNE - ${courier.service}`,
+    price: formatNumber(courier.value),
+    etd: getEstimate(courier.etd),
+    value: {
+      courier: "jne",
+      service: courier.service,
+    },
+  }));
+
+  return [...tiki, ...jne];
+});
 
 function handleConfirmCourier() {
-  isOpen.value = false;
-  model.value = items.value.find(
-    (item) => item.value === courierSelected.value
-  );
+  execute(courierSelected.value);
 }
 </script>
 
