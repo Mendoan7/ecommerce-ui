@@ -376,7 +376,7 @@ const { execute: addToCart, status: statusCart } = useSubmit(
           color: "green",
           title: "Produk berhasil ditambahkan ke keranjang",
         });
-        refreshNuxtData("cart");
+        refreshNuxtData("cart-product");
       }
     },
   }

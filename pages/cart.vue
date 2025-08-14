@@ -179,8 +179,24 @@ const paddingCheckoutFooter = "sm:py-3 sm:px-7";
 const router = useRouter();
 
 const { data, status } = useApi(`/server/api/cart`, {
-  server: false,
+  server: false, // token ada di client
+  immediate: computed(() => !!session.token), // ⬅️ fetch hanya saat login
   key: "cart-page",
+  default: () => ({
+    // ⬅️ fallback aman saat guest
+    data: {
+      items: [],
+      cart: {
+        subtotal: 0,
+        voucher_value: 0,
+        voucher_cashback: 0,
+        pay_with_coin: 0,
+      },
+    },
+  }),
+  onResponseError({ response }) {
+    if (response.status === 401) return; // abaikan guest
+  },
   onResponse({ response }) {
     if (response.ok) {
       useCoin.value = !!response._data?.data?.cart?.pay_with_coin;

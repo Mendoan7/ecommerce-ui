@@ -53,7 +53,7 @@
         v-if="!session.token"
         color="white"
         class="font-normal px-28"
-        to="/learning/data-fetching"
+        to="/login"
       >
         Login untuk Lihat Lainnya
       </UButton>

@@ -10,7 +10,9 @@
   >
     <div class="timeline-status-header">
       <div class="timeline-status-icon">
-        <component :is="icon" />
+        <!-- jika string → render UIcon; jika komponen → render component -->
+        <UIcon v-if="typeof icon === 'string'" :name="icon" />
+        <component v-else :is="icon" />
       </div>
 
       <div v-if="!noLineLeft" class="timeline-status-line-left" />
@@ -47,10 +49,7 @@ defineProps({
     type: String,
     default: "",
   },
-  icon: {
-    type: String,
-    default: "",
-  },
+  icon: { type: [String, Object, Function], default: null },
   noLineLeft: {
     type: Boolean,
     default: false,

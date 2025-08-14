@@ -83,7 +83,7 @@ const tabs = [
   },
   {
     label: "Dibayar",
-    key: "pending_payment",
+    key: "paid",
   },
   {
     label: "Sedang Diproses",

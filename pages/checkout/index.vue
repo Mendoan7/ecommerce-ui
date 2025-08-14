@@ -459,6 +459,7 @@ const paymentList = computed(() => [
 
 const { data, status } = useApi(`/server/api/cart`, {
   server: false,
+  immediate: computed(() => !!session.token),
   key: "cart-checkout",
   onResponse({ response }) {
     if (response.ok) {

@@ -1,5 +1,6 @@
 <template>
-  <div class="text-sm text-black/80">
+  <BaseLoading v-if="status === 'pending'" />
+  <div v-else class="text-sm text-black/80">
     <div class="bg-white divide-y divide-dashed">
       <div class="flex justify-between gap-4 px-6 py-5">
         <UButton
@@ -11,9 +12,9 @@
           color="gray"
         />
         <div class="divide-x">
-          <span class="px-4">NO. PESANAN. XXXXXXXXX</span>
+          <span class="px-4">NO. PESANAN. {{ data?.invoice_number }}</span>
           <span class="px-4 uppercase text-primary">
-            PESANAN SEDANG DISIAPKAN
+            {{ lastStatus?.description }}
           </span>
         </div>
       </div>
@@ -23,13 +24,20 @@
           class="grid grid-cols-5"
         />
       </div>
-      <div class="bg-yellow-50/30 flex justify-end px-6 py-3 gap-2">
+      <div
+        v-if="
+          ['paid', 'on_processing', 'on_delivery'].includes(lastStatus?.status)
+        "
+        class="bg-yellow-50/30 flex justify-end px-6 py-3 gap-2"
+      >
         <UButton
+          v-if="lastStatus?.status === 'paid'"
           class="min-w-56 justify-center"
           label="Proses Order ini"
-          @click="openModalUpdateStatus('on_processing')"
+          @click="handleProcessOrder"
         />
         <UButton
+          v-if="['on_processing', 'on_delivery'].includes(lastStatus?.status)"
           class="min-w-56 justify-center"
           label="Update Status Pengiriman"
           @click="openModalUpdateStatus('on_delivery')"
@@ -39,7 +47,7 @@
           <UCard>
             <template #header> Update Status Order </template>
             <form @submit.prevent="handleUpdateStatus">
-              <UFormGroup label="Deskripsi">
+              <UFormGroup label="Deskripsi" :error="v$.$errors?.[0]?.$message">
                 <UTextarea v-model="modalUpdateStatus.form.description" />
               </UFormGroup>
               <div class="flex justify-end gap-4 mt-6">
@@ -47,9 +55,14 @@
                   color="gray"
                   variant="link"
                   label="Nanti Saja"
+                  :disabled="statusUpdate === 'pending'"
                   @click="closeModalUpdateStatus"
                 />
-                <UButton type="submit" label="Simpan" />
+                <UButton
+                  type="submit"
+                  label="Simpan"
+                  :loading="statusUpdate === 'pending'"
+                />
               </div>
             </form>
           </UCard>
@@ -60,15 +73,23 @@
         <div class="flex justify-between items-center">
           <p class="text-xl">Alamat Pengiriman</p>
           <div class="text-right text-xs text-black/55">
-            <p>SPX Hemat</p>
+            <p>{{ data?.courier }} - {{ data?.courier_type }}</p>
             <p>XXXXXXXXX</p>
           </div>
         </div>
         <div class="flex divide-x mt-3">
           <div class="w-80 py-2 pr-3">
-            <p>Irsyaad Budi</p>
-            <p class="text-black/55 mt-2">620000</p>
-            <p class="text-black/55">Jalan jalan</p>
+            <p>{{ data?.address?.receiver_name }}</p>
+            <p class="text-black/55 mt-2">
+              {{ data?.address?.receiver_phone }}
+            </p>
+            <p class="text-black/55">
+              {{ data?.address?.detail_address }} {{ data?.address?.district }},
+              {{ data?.address?.city?.name }},
+              {{ data?.address?.city?.province?.name }},
+              {{ data?.address?.postal_code }}
+              {{ data?.address?.address_note }}
+            </p>
           </div>
           <div class="pl-3">
             <BaseTimelineVertical :items="orderHistory" />
@@ -80,10 +101,11 @@
       <div class="px-6 py-3">
         <div class="divide-y">
           <FeatureProfileOrderCardProduct
-            v-for="a in 3"
-            :key="`product-${a}`"
+            v-for="item in data?.items"
+            :key="`product-${item.uuid}`"
             size="sm"
             class="py-3"
+            :item="item"
           />
         </div>
       </div>
@@ -117,6 +139,8 @@ import {
   IconInbox,
   IconStars,
 } from "#components";
+import useVuelidate from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
 
 definePageMeta({
   breadcrumb: [
@@ -136,79 +160,134 @@ const modalUpdateStatus = reactive({
     description: "",
   },
 });
+const rules = {
+  description: { required },
+};
 
-const timelineStatus = [
-  {
-    title: "Pesanan Dibuat",
-    time: "10-08-2024 16:26",
-    passed: true,
-    icon: IconOrder,
-  },
-  {
-    title: "Pesanan Dibayarkan (Rp144.400)",
-    time: "10-08-2024 16:26",
-    passed: true,
-    icon: IconPaid,
-  },
-  {
-    title: "Sedang Dikemas",
-    time: "",
-    icon: IconTruckOutline,
-    active: true,
-  },
-  {
-    title: "Dikirim",
-    time: "",
-    icon: IconInbox,
-  },
-  {
-    title: "Belum Dinilai",
-    time: "",
-    icon: IconStars,
-  },
-];
+const v$ = useVuelidate(
+  rules,
+  computed(() => ({ description: modalUpdateStatus.form.description })),
+  { $autoDirty: true }
+);
 
-const orderHistory = [
+const route = useRoute();
+const nuxtApp = useNuxtApp();
+const { data, status, refresh } = useApi(
+  `/server/api/seller-dashboard/order/${route.params.orderId}`,
   {
-    title: "Pesanan Dibayar",
-    time: "11-08-2024 16:27",
-    active: true,
-  },
+    key: `order-seller-${route.params.orderId}`,
+    getCachedData() {
+      return (
+        nuxtApp.payload.data?.[`order-seller-${route.params.orderId}`] ||
+        nuxtApp.static.data?.[`order-seller-${route.params.orderId}`]
+      );
+    },
+    transform(response) {
+      return response?.data || {};
+    },
+  }
+);
+const { execute, status: statusUpdate } = useSubmit(
+  computed(
+    () => `/server/api/seller-dashboard/order/${route.params.orderId}/status`
+  ),
   {
-    title: "Pesanan Dibuat",
-    time: "11-08-2024 16:26",
-  },
-];
+    onResponse({ response }) {
+      if (response.ok) {
+        modalUpdateStatus.open = false;
+        modalUpdateStatus.status = "";
+        modalUpdateStatus.form.description = "";
+        v$.value.$reset();
+        refresh();
+      }
+    },
+  }
+);
+
+const lastStatus = computed(() => data.value?.last_status || {});
+
+const timelineStatus = computed(() => {
+  const pendingStatus = data.value?.status?.find(
+    (i) => i.status === "pending_payment"
+  );
+  const paidStatus = data.value?.status?.find((i) => i.status === "paid");
+  const processStatus = data.value?.status?.find(
+    (i) => i.status === "on_processing"
+  );
+  const deliveryStatus = data.value?.status?.find(
+    (i) => i.status === "on_delivery"
+  );
+  const doneStatus = data.value?.status?.find((i) => i.status === "done");
+
+  return [
+    {
+      title: "Pesanan Dibuat",
+      time: pendingStatus?.created_at,
+      passed:
+        !!pendingStatus &&
+        !["pending_payment", "failed"].includes(lastStatus.value?.status),
+      active: lastStatus.value?.status === "pending_payment",
+      icon: IconOrder,
+    },
+    {
+      title: `Pesanan${paidStatus ? "" : " Belum"} Dibayarkan (Rp${formatNumber(
+        data.value?.total
+      )})`,
+      time: paidStatus?.created_at,
+      passed: !!paidStatus && lastStatus.value?.status !== "paid",
+      active: lastStatus.value?.status === "paid",
+      icon: IconPaid,
+    },
+    {
+      title: "Sedang Dikemas",
+      time: processStatus?.created_at,
+      passed: !!processStatus && lastStatus.value?.status !== "on_processing",
+      active: lastStatus.value?.status === "on_processing",
+      icon: IconTruckOutline,
+    },
+    {
+      title: "Dikirim",
+      time: deliveryStatus?.created_at,
+      passed: !!deliveryStatus && lastStatus.value?.status !== "on_delivery",
+      active: lastStatus.value?.status === "on_delivery",
+      icon: IconInbox,
+    },
+    {
+      title: data.value?.items?.[0]?.is_reviewed ? "Selesai" : "Belum Dinilai",
+      time: data.value?.items?.[0]?.is_reviewed ? doneStatus?.created_at : "",
+      passed: !!doneStatus && lastStatus.value?.status !== "done",
+      active: lastStatus.value?.status === "done",
+      icon: IconStars,
+    },
+  ];
+});
+
+const orderHistory = computed(() => {
+  return data.value?.status
+    ?.map((item, index, arr) => ({
+      title: item?.description,
+      time: item?.created_at,
+      active: index === arr.length - 1,
+    }))
+    .sort((a, b) => new Date(b.time) - new Date(a.time));
+});
+
+const subtotalProduct = computed(() => {
+  return data.value?.items?.reduce((result, current) => {
+    result += current.total;
+    return result;
+  }, 0);
+});
 
 const priceItem = computed(() => [
   {
     label: "Subtotal Produk",
-    value: `Rp ${formatNumber(80934232)}`,
-  },
-  {
-    label: "Subtotal Pengiriman",
-    value: `Rp ${formatNumber(80934232)}`,
-  },
-  {
-    label: "Voucher Digunakan",
-    value: `Rp ${formatNumber(80934232)}`,
-  },
-  {
-    label: "4750 Koin Syopo ditukarkan",
-    value: `Rp ${formatNumber(4750)}`,
-  },
-  {
-    label: "Biaya Layanan",
-    value: `Rp ${formatNumber(4750)}`,
+    value: `Rp ${formatNumber(subtotalProduct.value)}`,
   },
   {
     label: "Total Pesanan",
-    value: `Rp ${formatNumber(4750)}`,
+    value: `Rp ${formatNumber(data.value?.total)}`,
     class: "text-primary text-2xl",
-  },
-  {
-    label: "Metode Pembayaran",
-    value: "Virtual Account",
   },
 ]);
 
@@ -221,12 +300,22 @@ function openModalUpdateStatus(updateStatus) {
 function closeModalUpdateStatus() {
   modalUpdateStatus.open = false;
   modalUpdateStatus.form.description = "";
+  v$.value.$reset();
+}
+
+function handleProcessOrder() {
+  const confirm = window.confirm("Anda yakin untuk memproses order ini?");
+  if (!confirm) return;
+  execute({
+    status: "on_processing",
+  });
 }
 
 function handleUpdateStatus() {
-  alert(
-    `status: ${modalUpdateStatus.status}, description: ${modalUpdateStatus.form.description}`
-  );
+  execute({
+    status: modalUpdateStatus.status,
+    delivery_note: modalUpdateStatus.form.description,
+  });
 }
 </script>
 

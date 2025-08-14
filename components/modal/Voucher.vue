@@ -123,6 +123,7 @@ const props = defineProps({
 });
 
 const { data, status } = useApi("/server/api/cart/get-voucher", {
+  immediate: computed(() => !!session.token),
   key: "voucher-list",
   getCachedData() {
     return (
