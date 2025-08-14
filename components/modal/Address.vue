@@ -87,6 +87,10 @@ const nuxtApp = useNuxtApp();
 
 const addressSelected = ref("");
 
+const props = defineProps({
+  refreshKey: { type: String, default: "cart" },
+});
+
 const { data, status } = useApi("/server/api/address", {
   key: "address-list",
   getCachedData() {
@@ -106,7 +110,7 @@ const { execute, status: statusUpdate } = useSubmit(
         model.value = data.value?.data?.find(
           (item) => item.uuid === addressSelected.value
         );
-        refreshNuxtData("cart");
+        refreshNuxtData(props.refreshKey);
       }
     },
   }
@@ -119,27 +123,6 @@ watch(model, (newValue) => {
 });
 
 const addressList = computed(() => {
-  // {
-  //   value: "address1",
-  //   label: "Irsyaad Budi",
-  //   description: "Jalan raya",
-  //   no_hp: "08912313123123",
-  //   status: "default",
-  // },
-  // {
-  //   value: "address2",
-  //   label: "Irsyaad Budi",
-  //   description: "Jalan raya",
-  //   no_hp: "08912313123123",
-  //   status: "shop",
-  // },
-  // {
-  //   value: "address3",
-  //   label: "Irsyaad Budi",
-  //   description: "Jalan raya",
-  //   no_hp: "08912313123123",
-  //   status: "",
-  // },
   return data.value?.data?.map((item) => ({
     value: item.uuid,
     label: item.receiver_name,

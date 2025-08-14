@@ -259,6 +259,99 @@
                 <span class="text-sm text-black/55">Subtotal untuk Produk</span>
               </td>
               <td class="text-right min-w-44">
+                Rp{{ formatNumber(cart?.subtotal) }}
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="text-sm text-black/55">Total Ongkos Kirim</span>
+              </td>
+              <td class="text-right min-w-44">
+                Rp{{ formatNumber(cart?.courier_price) }}
+              </td>
+            </tr>
+
+            <tr>
+              <td><span class="text-sm text-black/55">Biaya Layanan</span></td>
+              <td class="text-right min-w-44">
+                Rp{{ formatNumber(cart?.service_fee) }}
+              </td>
+            </tr>
+
+            <!-- Voucher Diskon (mengurangi total) -->
+            <tr v-if="voucherDiscount > 0">
+              <td>
+                <span class="text-sm text-black/55">
+                  Voucher Diskon
+                  <UBadge v-if="voucherCode" variant="outline" class="ml-1">
+                    {{ voucherCode }}
+                  </UBadge>
+                </span>
+                <div v-if="voucherDetail" class="text-xs text-black/40 mt-0.5">
+                  {{ voucherDetail }}
+                </div>
+              </td>
+              <td class="text-right min-w-44 text-green-700">
+                -Rp{{ formatNumber(voucherDiscount) }}
+              </td>
+            </tr>
+
+            <!-- Voucher Cashback (informasi, tidak mengurangi total_payment) -->
+            <tr v-if="voucherCashback > 0">
+              <td>
+                <span class="text-sm text-black/55">
+                  Voucher Cashback
+                  <UBadge v-if="voucherCode" variant="outline" class="ml-1">
+                    {{ voucherCode }}
+                  </UBadge>
+                </span>
+                <div v-if="voucherDetail" class="text-xs text-black/40 mt-0.5">
+                  {{ voucherDetail }}
+                </div>
+              </td>
+              <td class="text-right min-w-44">
+                Rp{{ formatNumber(voucherCashback) }}
+              </td>
+            </tr>
+
+            <!-- (Opsional) Potongan Koin -->
+            <tr v-if="payWithCoinNominal > 0">
+              <td>
+                <span class="text-sm text-black/55">Bayar dengan Koin</span>
+              </td>
+              <td class="text-right min-w-44 text-green-700">
+                -Rp{{ formatNumber(payWithCoinNominal) }}
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <span class="text-sm text-black/55">Total Pembayaran</span>
+              </td>
+              <td class="text-right min-w-44 text-3xl text-primary">
+                Rp{{ formatNumber(cart?.total_payment) }}
+              </td>
+            </tr>
+
+            <!-- (Opsional) catatan kecil untuk jelaskan cashback -->
+            <tr v-if="voucherCashback > 0">
+              <td colspan="2" class="pt-1 text-right">
+                <span class="text-xs text-black/40">
+                  *Cashback tidak mengurangi total pembayaran; akan dikreditkan
+                  ke akun Anda.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- <table class="price-summary">
+          <tbody>
+            <tr>
+              <td>
+                <span class="text-sm text-black/55">Subtotal untuk Produk</span>
+              </td>
+              <td class="text-right min-w-44">
                 Rp{{ formatNumber(data?.data?.cart?.subtotal) }}
               </td>
             </tr>
@@ -290,14 +383,14 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table> -->
       </div>
       <div
         class="border-t border-gray-100 border-dashed p-6 flex justify-end bg-yellow-50/30"
       >
         <UButton
           class="w-52 justify-center"
-          :disabled="!courierSelected?.courier"
+          :disabled="status === 'pending' || !courierSelected?.courier"
           :loading="statusCheckout === 'pending'"
           @click="handlePayment"
         >
@@ -307,9 +400,17 @@
     </div>
 
     <template v-if="data?.data?.items?.length">
-      <ModalAddress v-model:open="openAddress" v-model="addressSelected" />
-      <ModalCourier v-model:open="openCourier" v-model="courierSelected" />
-      <ModalVoucher v-model="openVoucher" />
+      <ModalAddress
+        v-model:open="openAddress"
+        v-model="addressSelected"
+        refresh-key="cart-checkout"
+      />
+      <ModalCourier
+        v-model:open="openCourier"
+        v-model="courierSelected"
+        refresh-key="cart-checkout"
+      />
+      <ModalVoucher v-model="openVoucher" refresh-key="cart-checkout" />
     </template>
   </UContainer>
 </template>
@@ -324,7 +425,6 @@ definePageMeta({
   middleware: ["must-auth"],
 });
 
-const nuxtApp = useNuxtApp();
 const router = useRouter();
 
 const session = useSession();
@@ -343,12 +443,12 @@ const courierSelected = ref({
   service: "",
 });
 
-const paymentSelected = ref("bni_va");
+const paymentSelected = ref("bca_va");
 const paymentList = computed(() => [
   {
-    value: "bni_va",
-    label: "Bank BNI",
-    image: "/images/logo-bni.webp",
+    value: "bca_va",
+    label: "Bank BCA",
+    image: "/images/logo-bca.png",
   },
   {
     value: "qris",
@@ -359,7 +459,7 @@ const paymentList = computed(() => [
 
 const { data, status } = useApi(`/server/api/cart`, {
   server: false,
-  key: "cart",
+  key: "cart-checkout",
   onResponse({ response }) {
     if (response.ok) {
       useCoin.value = !!response._data?.data?.cart?.pay_with_coin;
@@ -375,12 +475,6 @@ const { data, status } = useApi(`/server/api/cart`, {
       }
     }
   },
-  getCachedData() {
-    return (
-      nuxtApp.payload.data?.["category-list"] ||
-      nuxtApp.static.data?.["category-list"]
-    );
-  },
 });
 
 const product = computed(() => data.value?.data?.items?.[0]);
@@ -390,7 +484,7 @@ const { execute: updateQty, status: statusUpdateQty } = useSubmit(
   {
     onResponse({ response }) {
       if (response.ok) {
-        refreshNuxtData("cart");
+        refreshNuxtData("cart-checkout");
       }
     },
   }
@@ -406,7 +500,7 @@ const { execute: submitPayWithCoin, status: statusCoin } = useSubmit(
     }),
     onResponse({ response }) {
       if (response.ok) {
-        refreshNuxtData("cart");
+        refreshNuxtData("cart-checkout");
       }
     },
   }
@@ -427,11 +521,12 @@ const coinBalance = computed(() => formatNumber(session.profile.balance));
 const payWithCoin = computed(() =>
   formatNumber(data.value?.data?.cart?.pay_with_coin || 0)
 );
-const totalDiscount = computed(() => {
-  const cashback = data.value?.data?.cart?.voucher_cashback || 0;
-  const discount = data.value?.data?.cart?.voucher_value || 0;
-  return formatNumber(cashback + discount);
-});
+// const totalDiscount = computed(() => {
+//   console.log(data.value?.data?.cart);
+//   const cashback = data.value?.data?.cart?.voucher_cashback || 0;
+//   const discount = data.value?.data?.cart?.voucher_value || 0;
+//   return formatNumber(cashback + discount);
+// });
 
 function handleUpdateNotes() {
   if (!product.value) return;
@@ -454,6 +549,33 @@ function handlePayment() {
     payment_method: paymentSelected.value,
   });
 }
+
+const cart = computed(() => data.value?.data?.cart || {});
+const voucher = computed(() => cart.value?.voucher || null);
+
+const voucherCode = computed(() => voucher.value?.code || null);
+const voucherDiscount = computed(() => Number(cart.value?.voucher_value || 0)); // potong total
+const voucherCashback = computed(() =>
+  Number(cart.value?.voucher_cashback || 0)
+); // info saja
+const payWithCoinNominal = computed(() =>
+  Number(cart.value?.pay_with_coin || 0)
+);
+
+const voucherDetail = computed(() => {
+  const v = voucher.value;
+  if (!v) return null;
+  const isPct = v.discount_cashback_type === "percentage";
+  const val = isPct
+    ? `${v.discount_cashback_value}%`
+    : `Rp${formatNumber(v.discount_cashback_value)}`;
+  const cap =
+    isPct && Number(v.discount_cashback_max) > 0
+      ? ` (maks Rp${formatNumber(v.discount_cashback_max)})`
+      : "";
+  const seller = v.seller?.store_name ? ` • ${v.seller.store_name}` : "";
+  return `${val}${cap}${seller}`;
+});
 </script>
 
 <style scoped>

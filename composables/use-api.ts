@@ -1,9 +1,6 @@
 import type { UseFetchOptions } from "#app";
 
-export function useApi<T = unknown>(
-  request: string | Ref<string>,
-  options: UseFetchOptions<T>
-) {
+export function useApi<T = unknown>(request: string | Ref<string>, options: UseFetchOptions<T>) {
   const toast = useToast();
   const session = useSession();
   return useFetch(request, {

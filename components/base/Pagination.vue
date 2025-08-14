@@ -1,7 +1,7 @@
 <template>
   <UPagination
     v-model="page"
-    :page-count="5"
+    :page-count="perPage"
     :total="total"
     :inactive-button="{
       variant: 'link',
@@ -42,7 +42,11 @@ defineProps({
     type: Number,
     default: 0,
   },
+  perPage: {
+    type: Number,
+    default: 10,
+  },
 });
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>

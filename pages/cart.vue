@@ -39,6 +39,7 @@
               v-for="item in data?.data?.items"
               :key="`product-${item.uuid}`"
               :item="item"
+              refresh-key="cart-page"
             />
           </div>
         </UCard>
@@ -110,23 +111,36 @@
             <div class="flex justify-end item">
               <div class="flex gap-4">
                 <div>
+                  <!-- Rincian promosi -->
                   <div class="flex items-center gap-1">
                     <span>Total ({{ data?.data?.items?.length }} produk):</span>
                     <span class="text-primary font-normal text-2xl">
                       Rp{{ totalPrice }}
                     </span>
                   </div>
+                  <!-- Cashback → tampilkan “Koin yang diterima” -->
                   <div
-                    v-if="
-                      data.value?.data?.cart?.voucher_cashback ||
-                      data.value?.data?.cart?.voucher_value
-                    "
+                    v-if="voucherCashback > 0"
+                    class="flex gap-6 text-sm font-normal justify-end"
+                  >
+                    <span>Koin yang diterima</span>
+                    <span class="text-primary"
+                      >Rp{{ formatRb(voucherCashback) }}</span
+                    >
+                  </div>
+
+                  <!-- Diskon → tampilkan “Hemat” -->
+                  <div
+                    v-else-if="voucherDiscount > 0"
                     class="flex gap-6 text-sm font-normal justify-end"
                   >
                     <span>Hemat</span>
-                    <span class="text-primary">{{ totalDiscount }}</span>
+                    <span class="text-primary"
+                      >Rp. {{ formatRb(totalSavingText) }}</span
+                    >
                   </div>
                 </div>
+
                 <UButton
                   class="px-9 min-w-52 justify-center"
                   :disabled="statusCoin === 'pending'"
@@ -138,7 +152,7 @@
           </template>
         </UCard>
 
-        <ModalVoucher v-model="openVoucher" />
+        <ModalVoucher v-model="openVoucher" refresh-key="cart-page" />
       </template>
     </template>
   </UContainer>
@@ -156,7 +170,6 @@ definePageMeta({
 });
 
 const session = useSession();
-const nuxtApp = useNuxtApp();
 
 const openVoucher = ref(false);
 const useCoin = ref(false);
@@ -167,31 +180,35 @@ const router = useRouter();
 
 const { data, status } = useApi(`/server/api/cart`, {
   server: false,
-  key: "cart",
+  key: "cart-page",
   onResponse({ response }) {
     if (response.ok) {
       useCoin.value = !!response._data?.data?.cart?.pay_with_coin;
     }
   },
-  getCachedData() {
-    return (
-      nuxtApp.payload.data?.["category-list"] ||
-      nuxtApp.static.data?.["category-list"]
-    );
-  },
 });
 
-const totalPrice = computed(() =>
-  formatNumber(data.value?.data?.cart?.total || 0)
+const cart = computed(() => data.value?.data?.cart || {});
+
+const subtotal = computed(() => Number(data.value?.data?.cart?.subtotal || 0));
+const voucherDiscount = computed(() => Number(cart.value?.voucher_value || 0)); // memotong total
+const voucherCashback = computed(() =>
+  Number(cart.value?.voucher_cashback || 0)
 );
-const totalDiscount = computed(() => {
-  const cashback = data.value?.data?.cart?.voucher_cashback || 0;
-  const discount = data.value?.data?.cart?.voucher_value || 0;
-  return formatRb(cashback + discount);
-});
+// jadi koin
+// const hasPromo = computed(
+//   () => voucherDiscount.value > 0 || voucherCashback.value > 0
+// );
+const totalSavingText = computed(() =>
+  formatRb(voucherDiscount.value + voucherCashback.value)
+);
+
 const coinBalance = computed(() => formatNumber(session.profile.balance));
 const payWithCoin = computed(() =>
-  formatNumber(data.value?.data?.cart?.pay_with_coin)
+  Number(data.value?.data?.cart?.pay_with_coin)
+);
+const totalPrice = computed(() =>
+  formatNumber(subtotal.value - voucherDiscount.value - payWithCoin.value)
 );
 
 const { execute: submitPayWithCoin, status: statusCoin } = useSubmit(
@@ -204,7 +221,7 @@ const { execute: submitPayWithCoin, status: statusCoin } = useSubmit(
     }),
     onResponse({ response }) {
       if (response.ok) {
-        refreshNuxtData("cart");
+        refreshNuxtData("cart-page");
       }
     },
   }

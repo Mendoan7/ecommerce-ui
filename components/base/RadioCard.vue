@@ -4,7 +4,7 @@
       v-for="(item, index) in items"
       :key="`radio-card-item-${item.value}-${index}`"
       name="item"
-      :selected="item.value === model"
+      :selected="JSON.stringify(item.value) === JSON.stringify(model)"
       v-bind="item"
       @click="handleSelect(item.value)"
     />
@@ -33,4 +33,4 @@ function handleSelect(value) {
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>

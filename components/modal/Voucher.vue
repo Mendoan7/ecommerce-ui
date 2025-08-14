@@ -43,6 +43,7 @@
             <IconLoading class="text-primary w-6" />
             <p>Loading...</p>
           </div>
+
           <template v-else>
             <label
               v-for="voucher in data?.data"
@@ -117,6 +118,10 @@ const temporaryVoucher = ref("");
 
 const newVoucher = ref("");
 
+const props = defineProps({
+  refreshKey: { type: String, default: "cart" },
+});
+
 const { data, status } = useApi("/server/api/cart/get-voucher", {
   key: "voucher-list",
   getCachedData() {
@@ -133,7 +138,7 @@ const { execute: applyVoucher, status: statusApply } = useSubmit(
     onResponse({ response }) {
       if (response.ok) {
         handleClose();
-        refreshNuxtData("cart");
+        refreshNuxtData(props.refreshKey);
       }
     },
   }

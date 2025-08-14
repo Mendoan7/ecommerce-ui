@@ -56,7 +56,7 @@
           />
         </SellerFormGroup>
         <SellerFormGroup
-          label="Tipe Diskon | Cashback"
+          label="Tipe Diskon | Diskon"
           :error="
             v$.discount_cashback_type.$errors?.[0]?.$message ||
             v$.discount_cashback_value.$errors?.[0]?.$message
@@ -75,10 +75,10 @@
                   value: 'percentage',
                 },
               ]"
-              variant="none"
               :disabled="form.voucher_type === 'cashback'"
               value-attribute="value"
               option-attribute="label"
+              variant="none"
             />
             <UInput
               v-model="form.discount_cashback_value"

@@ -25,9 +25,12 @@
       <hr />
       <div class="filter-item">
         <h3>Berdasarkan Kategori</h3>
+        <p v-if="activeParent" class="text-primary font-medium mb-1">
+          {{ activeParent.name }}
+        </p>
         <div class="flex flex-col gap-2">
           <UCheckbox
-            v-for="cat in categories"
+            v-for="cat in sidebarChildren"
             :key="`cat-${cat.slug}`"
             v-model="formFilter.categories"
             :label="cat.name"
@@ -66,7 +69,7 @@
         <div v-if="data?.data?.data?.length" class="search-sort-pagination">
           <p>
             <span>{{ pagination.page }}</span
-            >/{{ data?.data?.last_page || 0 }}
+            >/<span>{{ data?.data?.last_page || 0 }}</span>
           </p>
           <div>
             <UButton
@@ -82,7 +85,7 @@
               size="xs"
               class="bg-black/5"
               :disabled="!data?.data?.next_page_url"
-              @click="pagination.page--"
+              @click="pagination.page++"
             />
           </div>
         </div>
@@ -123,74 +126,133 @@
   </UContainer>
 </template>
 
-<script setup>
+<!-- <script setup>
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
-const pagination = ref({
-  page: 1,
-});
+
+const pagination = ref({ page: Number(route.query?.page) || 1 });
 
 const formFilter = ref({
-  categories:
-    (typeof route.query?.categories === "string"
-      ? [route.query?.categories]
-      : route.query?.categories) || [],
-  minimum_price: route.query?.minimum_price || undefined,
-  maximum_price: route.query?.maximum_price || undefined,
+  // Child categories selected by user (checkbox)
+  categories: Array.isArray(route.query?.categories)
+    ? route.query.categories
+    : [],
+  minimum_price: route.query?.minimum_price ?? undefined,
+  maximum_price: route.query?.maximum_price ?? undefined,
   sorting_price: route.query?.sorting_price || "asc",
 });
+
 const temporaryPrice = reactive({
   minimum_price: route.query?.minimum_price || undefined,
   maximum_price: route.query?.maximum_price || undefined,
 });
 
-const { data: categories } = useApi("/server/api/category", {
-  key: "category-list",
-  transform(response) {
-    return (response?.data || []).reduce((result, parent) => {
-      result.push(
-        ...parent.childs.map((child) => ({
-          ...child,
-          icon: parent.icon,
-          name: `${parent.name} - ${child.name}`,
-        }))
-      );
-      return result;
-    }, []);
-  },
+// --- Category Tree (SSR-safe) ---
+const { data: categoryTree } = useApi("/server/api/category", {
+  key: "category-tree",
+  server: true,
+  lazy: false,
   getCachedData() {
     return (
-      nuxtApp.payload.data?.["category-list"] ||
-      nuxtApp.static.data?.["category-list"]
+      nuxtApp.payload.data?.["category-tree"] ||
+      nuxtApp.static.data?.["category-tree"]
     );
   },
 });
+const tree = computed(
+  () => categoryTree.value?.data || categoryTree.value || []
+);
 
+// --- Active parent from URL (?category=<parent-slug>) ---
+const activeParentSlug = computed(() =>
+  typeof route.query?.category === "string" ? route.query.category : null
+);
+const activeParent = computed(() => {
+  if (!tree.value.length) return null;
+  if (activeParentSlug.value)
+    return tree.value.find((p) => p.slug === activeParentSlug.value) || null;
+  // Fallback legacy: ?categories=<parent-slug> (string)
+  const qCat = route.query?.categories;
+  if (typeof qCat === "string")
+    return tree.value.find((p) => p.slug === qCat) || null;
+  return null;
+});
+
+// --- Sidebar children list ---
+const sidebarChildren = computed(() =>
+  activeParent.value
+    ? activeParent.value.childs || []
+    : tree.value.flatMap((p) => p.childs || [])
+);
+
+// --- Categories sent to API ---
+// Rule:
+// 1) If user picked children -> use them
+// 2) Else if there is active parent (?category=) -> use all its children
+// 3) Else if legacy ?categories=<slug> string:
+//      - if parent -> all its children
+//      - if child  -> [slug]
+// 4) Else -> undefined (no category filter)
+const requestedCategories = computed(() => {
+  const selected = formFilter.value.categories;
+  if (selected?.length) return selected;
+
+  if (activeParent.value)
+    return (activeParent.value.childs || []).map((c) => c.slug);
+
+  const qCat = route.query?.categories;
+  if (typeof qCat === "string" && tree.value.length) {
+    const parent = tree.value.find((p) => p.slug === qCat);
+    if (parent) return (parent.childs || []).map((c) => c.slug);
+    if (tree.value.some((p) => (p.childs || []).some((c) => c.slug === qCat)))
+      return [qCat];
+  }
+
+  return undefined;
+});
+
+// --- Products API ---
 const { data, status } = useApi("/server/api/product", {
-  params: computed(() => {
-    return {
-      search: route.query?.search,
-      ...formFilter.value,
-      ...pagination.value,
-      categories: undefined,
-      "categories[]": formFilter.value.categories,
-    };
-  }),
+  params: computed(() => ({
+    search: route.query?.search || undefined,
+    page: pagination.value.page,
+    minimum_price: formFilter.value.minimum_price,
+    maximum_price: formFilter.value.maximum_price,
+    sorting_price: formFilter.value.sorting_price,
+    categories: undefined,
+    "categories[]": requestedCategories.value,
+  })),
   dedupe: "defer",
 });
 
+// --- URL sync (clean, no hydration mismatch) ---
+// 1) Filters change -> reset page, push to URL (do not touch ?category)
 watch(
   formFilter,
-  (newFormFilter) => {
-    router.push({
-      query: {
-        ...route.query,
-        ...newFormFilter,
-      },
-    });
+  (nv) => {
+    pagination.value.page = 1;
+    const q = {
+      ...route.query,
+      minimum_price: nv.minimum_price,
+      maximum_price: nv.maximum_price,
+      sorting_price: nv.sorting_price,
+    };
+    if (nv.categories?.length) q.categories = nv.categories;
+    else delete q.categories;
+    delete q.page; // reset page in URL when filters change
+    router.push({ query: q });
   },
   { deep: true }
+);
+
+// 2) Page change -> reflect in URL (replace to avoid history spam)
+watch(
+  () => pagination.value.page,
+  (p) => {
+    const q = { ...route.query, page: p };
+    router.replace({ query: q });
+  }
 );
 
 function applyFilterPrice() {
@@ -205,19 +267,188 @@ function resetFilter() {
     maximum_price: undefined,
     sorting_price: "asc",
   };
-
   temporaryPrice.minimum_price = undefined;
   temporaryPrice.maximum_price = undefined;
 }
 
-const titleMeta = computed(() =>
-  route.query?.search
-    ? `Sedang mencari produk ${route.query?.search}`
-    : `Sedang mencari produk${
-        route.query.categories ? ` ${route.query.categories}` : ""
-      }`
+// --- SEO meta ---
+const titleMeta = computed(() => {
+  if (route.query?.search) return `Sedang mencari produk ${route.query.search}`;
+  if (activeParent.value) return `Produk kategori ${activeParent.value.name}`;
+  return "Sedang mencari produk";
+});
+useSeoMeta({
+  title: titleMeta,
+  ogTitle: () => `${titleMeta.value} | Syopee`,
+  twitterTitle: () => `${titleMeta.value} | Syopee`,
+  description: titleMeta,
+  ogDescription: titleMeta,
+  twitterDescription: titleMeta,
+});
+</script> -->
+
+<script setup>
+const nuxtApp = useNuxtApp();
+const route = useRoute();
+const router = useRouter();
+
+// --- Guards to avoid hydration mismatch ---
+const isClientReady = ref(false);
+onMounted(() => {
+  isClientReady.value = true;
+});
+
+// --- State ---
+const pagination = ref({ page: Number(route.query?.page) || 1 });
+
+const formFilter = ref({
+  // Only user-picked children (checkbox). We do NOT auto-fill from parent.
+  categories: Array.isArray(route.query?.categories)
+    ? route.query.categories
+    : [],
+  minimum_price: route.query?.minimum_price ?? undefined,
+  maximum_price: route.query?.maximum_price ?? undefined,
+  sorting_price: route.query?.sorting_price || "asc",
+});
+
+const temporaryPrice = reactive({
+  minimum_price: route.query?.minimum_price ?? undefined,
+  maximum_price: route.query?.maximum_price ?? undefined,
+});
+
+// --- Category tree (SSR) ---
+const { data: categoryTree } = useApi("/server/api/category", {
+  key: "category-tree",
+  server: true,
+  lazy: false,
+  getCachedData() {
+    return (
+      nuxtApp.payload.data?.["category-tree"] ||
+      nuxtApp.static.data?.["category-tree"]
+    );
+  },
+});
+const tree = computed(
+  () => categoryTree.value?.data || categoryTree.value || []
 );
 
+// --- Active parent from URL (?category=<slug>) ---
+const activeParentSlug = computed(() =>
+  typeof route.query?.category === "string" ? route.query.category : null
+);
+const activeParent = computed(() => {
+  if (!tree.value.length || !activeParentSlug.value) return null;
+  return tree.value.find((p) => p.slug === activeParentSlug.value) || null;
+});
+
+// --- Sidebar children (list) ---
+const sidebarChildren = computed(() =>
+  activeParent.value
+    ? activeParent.value.childs || []
+    : tree.value.flatMap((p) => p.childs || [])
+);
+
+// --- Categories sent to API (single source of truth) ---
+// 1) If user picked children -> use them
+// 2) Else if ?category=<parent> exists -> use all its children
+// 3) Else if legacy ?categories=<slug> (string):
+//    - if parent -> all its children
+//    - if child  -> [slug]
+// 4) Else -> undefined (no category filter)
+const requestedCategories = computed(() => {
+  if (formFilter.value.categories?.length) return formFilter.value.categories;
+
+  if (activeParent.value) {
+    return (activeParent.value.childs || []).map((c) => c.slug);
+  }
+
+  const qCat = route.query?.categories;
+  if (typeof qCat === "string" && tree.value.length) {
+    const parent = tree.value.find((p) => p.slug === qCat);
+    if (parent) return (parent.childs || []).map((c) => c.slug);
+    if (tree.value.some((p) => (p.childs || []).some((c) => c.slug === qCat))) {
+      return [qCat];
+    }
+  }
+
+  return undefined;
+});
+
+// --- Products API (SSR) ---
+const { data, status } = useApi("/server/api/product", {
+  key: "search-products",
+  server: true,
+  lazy: false,
+  params: computed(() => ({
+    search: route.query?.search || undefined,
+    page: pagination.value.page,
+    minimum_price: formFilter.value.minimum_price,
+    maximum_price: formFilter.value.maximum_price,
+    sorting_price: formFilter.value.sorting_price,
+    categories: undefined,
+    "categories[]": requestedCategories.value,
+  })),
+  getCachedData() {
+    return (
+      nuxtApp.payload.data?.["search-products"] ||
+      nuxtApp.static.data?.["search-products"]
+    );
+  },
+});
+
+// --- URL sync (only after mounted) ---
+watch(
+  formFilter,
+  (nv) => {
+    if (!isClientReady.value) return;
+    pagination.value.page = 1;
+
+    const q = {
+      ...route.query,
+      minimum_price: nv.minimum_price,
+      maximum_price: nv.maximum_price,
+      sorting_price: nv.sorting_price,
+    };
+
+    if (nv.categories?.length) q.categories = nv.categories;
+    else delete q.categories;
+
+    delete q.page; // reset page on filter change
+    router.push({ query: q });
+  },
+  { deep: true }
+);
+
+watch(
+  () => pagination.value.page,
+  (p) => {
+    if (!isClientReady.value) return;
+    router.replace({ query: { ...route.query, page: p } });
+  }
+);
+
+// --- Actions ---
+function applyFilterPrice() {
+  formFilter.value.minimum_price = temporaryPrice.minimum_price;
+  formFilter.value.maximum_price = temporaryPrice.maximum_price;
+}
+function resetFilter() {
+  formFilter.value = {
+    categories: [],
+    minimum_price: undefined,
+    maximum_price: undefined,
+    sorting_price: "asc",
+  };
+  temporaryPrice.minimum_price = undefined;
+  temporaryPrice.maximum_price = undefined;
+}
+
+// --- SEO ---
+const titleMeta = computed(() => {
+  if (route.query?.search) return `Sedang mencari produk ${route.query.search}`;
+  if (activeParent.value) return `Produk kategori ${activeParent.value.name}`;
+  return "Sedang mencari produk";
+});
 useSeoMeta({
   title: titleMeta,
   ogTitle: () => `${titleMeta.value} | Syopo`,

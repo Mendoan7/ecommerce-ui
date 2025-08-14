@@ -1,6 +1,10 @@
 <template>
   <UContainer class="py-5 text-black/85 text-sm">
-    <UCard>
+    <div v-if="status === 'pending'" class="flex gap-2 justify-center py-6">
+      <IconLoading class="w-6 text-primary" />
+      <p>Loading...</p>
+    </div>
+    <UCard v-else>
       <template #header>
         <div class="flex items-center gap-4">
           <UButton
@@ -18,17 +22,18 @@
             <div class="payment-item justify-between">
               <span class="text-base font-normal">Total Pembayaran</span>
               <span class="text-base font-medium text-primary"
-                >Rp{{ formatNumber(100000) }}</span
+                >Rp{{ formatNumber(data?.data?.total_payment) }}</span
               >
             </div>
             <div class="payment-item justify-between">
               <span class="text-base font-normal">Bayar Dalam</span>
               <div class="text-right">
                 <p class="text-primary text-base font-medium">
-                  23 jam 59 menit 50 detik
+                  <!-- 23 jam 59 menit 50 detik -->
+                  {{ countdownDisplay }}
                 </p>
                 <p class="text-black/55 font-normal">
-                  Jatuh tempo 11 Ags 2024, 16:26
+                  Jatuh tempo {{ paymentExpiredAt }}
                 </p>
               </div>
             </div>
@@ -37,18 +42,25 @@
                 <img :src="paymentFrom.image" class="w-6 object-contain" />
                 <p>{{ paymentFrom.label }}</p>
               </div>
-              <div v-if="paymentSelected === 'bni_va'">
+              <div v-if="paymentSelected === 'bca_va'">
                 <p>No. Rekening</p>
                 <div class="flex gap-4 mt-1 items-center">
-                  <p class="text-primary text-xl">XXXX XXXX XXXX</p>
-                  <UButton variant="link" color="teal" :padded="false"
-                    >SALIN</UButton
+                  <p class="text-primary text-xl">
+                    {{ data?.data?.virtual_account_number }}
+                  </p>
+                  <UButton
+                    variant="link"
+                    color="teal"
+                    :padded="false"
+                    @click="handleCopy"
                   >
+                    SALIN
+                  </UButton>
                 </div>
               </div>
               <img
                 v-if="paymentSelected === 'qris'"
-                src="/images/qris-example.png"
+                :src="data?.data?.qris_image_url"
                 class="w-60 mx-auto"
               />
               <p class="text-teal-500">
@@ -71,7 +83,7 @@
       </template>
     </UCard>
 
-    <UModal v-model="isSuccess">
+    <UModal v-model="isSuccess" prevent-close>
       <UCard
         :ui="{
           rounded: 'rounded',
@@ -82,9 +94,9 @@
           Silakan cek notifikasi untuk mengetahui status pengiriman.
         </p>
         <div class="flex justify-end mt-1">
-          <UButton block class="max-w-44 mt-10" @click="isSuccess = false"
-            >OK</UButton
-          >
+          <UButton block class="max-w-44 mt-10" @click="handleRedirect">
+            OK
+          </UButton>
         </div>
       </UCard>
     </UModal>
@@ -92,37 +104,80 @@
 </template>
 
 <script setup>
+import { format } from "date-fns";
+
 definePageMeta({
   header: {
     showProfile: false,
     showSearch: false,
     showCart: false,
   },
+  middleware: ["must-auth"],
 });
 
+const route = useRoute();
 const isSuccess = ref(false);
-const paymentSelected = "qris";
+const toast = useToast();
+const { copy } = useClipboard();
+
+const { displayValue, startCountdown } = useCountdown();
+
+const { data, status, refresh } = useApi(
+  computed(() => `/server/api/order/${route.params.orderId}`),
+  {
+    onResponse({ response }) {
+      if (response.ok) {
+        if (response._data?.data?.is_paid) isSuccess.value = true;
+        const expiredAt = response._data?.data?.payment_expired_at;
+        if (expiredAt) {
+          const seconds = getSecondsFromDate(expiredAt);
+          startCountdown(seconds);
+        }
+      }
+    },
+  }
+);
+
+const countdownDisplay = computed(() => {
+  const _countdown = displayValue.value.split(":");
+  if (!_countdown[2]) {
+    if (!_countdown[1]) return `00 Jam 00 Menit ${_countdown[0]} Detik`;
+    return `00 Jam ${_countdown[0]} Menit ${_countdown[1]} Detik`;
+  }
+  return `${_countdown[0]} Jam ${_countdown[1]} Menit ${_countdown[2]} Detik`;
+});
+
+const paymentSelected = computed(() => data.value?.data?.payment_method);
+
+const paymentExpiredAt = computed(() => {
+  if (data.value?.data?.payment_expired_at) {
+    const expiredAt = new Date(data.value.data.payment_expired_at);
+    // 11 Ags 2024, 16:26
+    return format(expiredAt, "dd MMM yyyy, HH:mm");
+  }
+  return "";
+});
 
 const paymentFrom = computed(() =>
   [
     {
-      value: "bni_va",
-      label: "Bank BNI",
-      image: "/images/logo-bni.webp",
+      value: "bca_va",
+      label: "Bank BCA",
+      image: "/images/logo-bca.png",
     },
     {
       value: "qris",
       label: "QRIS",
       image: "/images/qris.png",
     },
-  ].find((item) => item.value === paymentSelected)
+  ].find((item) => item.value === paymentSelected.value)
 );
 
 const message = {
-  bni_va: {
+  bca_va: {
     description:
       "Bayar pesanan ke Virtual Account di atas sebelum membuat pesanan kembali dengan Virtual Account agar nomor tetap sama.",
-    caption: "Hanya menerima dari Bank BNI",
+    caption: "Hanya menerima dari Bank BCA",
   },
   qris: {
     description:
@@ -131,9 +186,20 @@ const message = {
   },
 };
 
+function handleCopy() {
+  copy(data.value?.data?.virtual_account_number);
+  toast.add({
+    color: "green",
+    title: "Berhasil menyalin",
+  });
+}
+
+function handleRedirect() {
+  navigateTo(`/my-account/orders/${route.params.orderId}`);
+}
+
 function handleCheckPayment() {
-  // TODO: hit api
-  isSuccess.value = true;
+  refresh();
 }
 </script>
 

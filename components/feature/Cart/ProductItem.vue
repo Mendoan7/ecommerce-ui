@@ -58,6 +58,7 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  refreshKey: { type: String, default: "cart" },
 });
 
 const temporaryQty = ref(props.item?.qty || 0);
@@ -67,7 +68,7 @@ const { execute: updateQty, status: statusUpdateQty } = useSubmit(
   {
     onResponse({ response }) {
       if (response.ok) {
-        refreshNuxtData("cart");
+        refreshNuxtData(props.refreshKey);
       }
     },
   }
@@ -78,7 +79,7 @@ const { execute: removeItem, status: statusRemoveItem } = useSubmit(
     method: "DELETE",
     onResponse({ response }) {
       if (response.ok) {
-        refreshNuxtData("cart");
+        refreshNuxtData(props.refreshKey);
       }
     },
   }

@@ -1,5 +1,7 @@
 <template>
-  <UButton class="logo" variant="link" :color="color" to="/"> Syopee </UButton>
+  <UButton class="logo" variant="link" :color="color" :padded="false" to="/">
+    Syopee
+  </UButton>
 </template>
 
 <script setup>

@@ -41,7 +41,7 @@
       </template>
     </UTable>
     <div class="flex justify-end py-3">
-      <BasePagination v-model="page" :total-product="total" />
+      <BasePagination v-model="page" :total="total" :per-page="perPage" />
     </div>
   </UCard>
 </template>
@@ -60,6 +60,10 @@ defineProps({
     type: String,
     default: "Belum Ada Data",
   },
+  perPage: {
+    type: Number,
+    default: 10,
+  },
 });
 
 const page = defineModel("page", {
@@ -68,4 +72,4 @@ const page = defineModel("page", {
 });
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>

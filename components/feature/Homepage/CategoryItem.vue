@@ -4,7 +4,7 @@
     :to="{
       path: '/search',
       query: {
-        categories: slug,
+        category: slug,
       },
     }"
   >

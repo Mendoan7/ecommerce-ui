@@ -92,16 +92,11 @@ const { data: respSlider } = useApi("/server/api/slider", {
 const { data: categories } = useApi("/server/api/category", {
   key: "category-list",
   transform(response) {
-    return (response?.data || []).reduce((result, parent) => {
-      result.push(
-        ...parent.childs.map((child) => ({
-          ...child,
-          icon: parent.icon,
-          name: `${parent.name} - ${child.name}`,
-        }))
-      );
-      return result;
-    }, []);
+    return (response?.data || []).map((parent) => ({
+      slug: parent.slug,
+      name: parent.name,
+      icon: parent.icon,
+    }));
   },
   getCachedData() {
     return (
@@ -110,21 +105,6 @@ const { data: categories } = useApi("/server/api/category", {
     );
   },
 });
-
-// [
-//   {
-//     slug: "microwave",
-//     name: "Parent - Microwave",
-//     description: null,
-//     icon: 'parent-icon'
-//   },
-//   {
-//     slug: "tv",
-//     name: "Parent - TV",
-//     description: null,
-//     icon: 'parent-icon'
-//   },
-// ];
 
 const { data: productList, execute } = useApi("/server/api/product", {
   params: pagination,
@@ -182,7 +162,7 @@ useSeoMeta({
 }
 
 .category-section-content {
-  @apply grid grid-cols-6;
+  @apply grid grid-cols-7;
 }
 
 .product-section-header {

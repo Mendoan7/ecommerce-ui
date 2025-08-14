@@ -19,7 +19,7 @@
           <BaseLoading
             v-if="statusJne === 'pending' || statusTiki === 'pending'"
           />
-          <BaseRadioCard v-else v-model="courierSelected" :items="items">
+          <BaseRadioCard v-else v-model="courierRaw" :items="items">
             <template #item="{ label, value, price, etd, selected, onClick }">
               <div
                 class="hover:bg-primary-50 border hover:border-primary-200 p-5"
@@ -43,12 +43,11 @@
           </BaseRadioCard>
         </div>
       </template>
-
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton color="white" @click="isOpen = false">Nanti Saja</UButton>
           <UButton
-            :disabled="!courierSelected"
+            :disabled="!courierRaw"
             :loading="statusUpdate === 'pending'"
             @click="handleConfirmCourier"
             >Konfirmasi</UButton
@@ -67,7 +66,11 @@ const isOpen = defineModel("open", {
 const model = defineModel({
   type: Object,
 });
-const courierSelected = ref({});
+const props = defineProps({
+  refreshKey: { type: String, default: "cart" },
+});
+
+const courierRaw = ref("");
 
 const { data: courierTiki, status: statusTiki } = useApi(
   "/server/api/cart/shipping?courier=tiki"
@@ -82,7 +85,7 @@ const { execute, status: statusUpdate } = useSubmit(
     onResponse({ response }) {
       if (response.ok) {
         isOpen.value = false;
-        refreshNuxtData("cart");
+        refreshNuxtData(props.refreshKey);
       }
     },
   }
@@ -92,52 +95,38 @@ watch(
   model,
   (newCourier) => {
     if (newCourier?.courier) {
-      courierSelected.value = newCourier;
+      courierRaw.value = `${newCourier.courier}|${newCourier.service}`;
     }
   },
   { immediate: true }
 );
 
 const items = computed(() => {
-  // {
-  //   label: "Regular",
-  //   price: "1000",
-  //   value: "REG",
-  //   etd: 7,
-  // },
-  // {
-  //   label: "Premium",
-  //   price: "1000",
-  //   value: "PRE",
-  //   etd: 7,
-  // },
-
   const tiki = (courierTiki.value?.data?.cost || [])?.map((courier) => ({
     label: `TIKI - ${courier.service}`,
     price: formatNumber(courier.value),
     etd: getEstimate(courier.etd),
-    value: {
-      courier: "tiki",
-      service: courier.service,
-    },
+    value: `tiki|${courier.service}`,
   }));
 
   const jne = (courierJne.value?.data?.cost || [])?.map((courier) => ({
     label: `JNE - ${courier.service}`,
     price: formatNumber(courier.value),
     etd: getEstimate(courier.etd),
-    value: {
-      courier: "jne",
-      service: courier.service,
-    },
+    value: `jne|${courier.service}`,
   }));
 
   return [...tiki, ...jne];
 });
 
 function handleConfirmCourier() {
-  execute(courierSelected.value);
+  if (!courierRaw.value) return;
+  const [courier, service] = courierRaw.value.split("|");
+  // update v-model (parent butuh object)
+  model.value = { courier, service };
+  // eksekusi API
+  execute({ courier, service });
 }
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped></style>
