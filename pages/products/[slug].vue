@@ -8,14 +8,14 @@
     <UCard>
       <div class="product-briefing">
         <div class="product-image">
-          <USkeleton class="w-[450px] h-[450px]" />
+          <USkeleton class="w-full h-64 sm:h-80 md:h-[450px]" />
         </div>
-        <div class="product-information space-y-6">
-          <USkeleton class="w-full h-6" />
-          <USkeleton class="w-10/12 h-6" />
-          <USkeleton class="w-8/12 h-6" />
-          <USkeleton class="w-10/12 h-6" />
-          <USkeleton class="w-6/12 h-6" />
+        <div class="product-information space-y-4 sm:space-y-6">
+          <USkeleton class="w-11/12 h-5 sm:h-6" />
+          <USkeleton class="w-10/12 h-5 sm:h-6" />
+          <USkeleton class="w-8/12 h-5 sm:h-6" />
+          <USkeleton class="w-10/12 h-5 sm:h-6" />
+          <USkeleton class="w-6/12 h-5 sm:h-6" />
         </div>
       </div>
     </UCard>
@@ -58,24 +58,26 @@
               <p class="text-gray-400 line-through font-normal">
                 Rp{{ rawPrice }}
               </p>
-              <p class="text-primary font-normal text-3xl">Rp{{ salePrice }}</p>
+              <p class="text-primary font-normal text-2xl sm:text-3xl">
+                Rp{{ salePrice }}
+              </p>
               <UBadge size="xs"
                 >{{ detailProduct.price_discount_percentage }}% OFF</UBadge
               >
             </template>
 
-            <p v-else class="text-primary font-normal text-3xl">
+            <p v-else class="text-primary font-normal text-2xl sm:text-3xl">
               Rp{{ rawPrice }}
             </p>
           </div>
           <div class="product-variant">
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-4 sm:gap-6">
               <div
                 v-for="variant in detailProduct.variations"
                 :key="variant.name"
-                class="flex gap-2 items-center"
+                class="flex flex-col sm:flex-row sm:items-center gap-2"
               >
-                <p class="w-28 text-black/55 text-sm">{{ variant.name }}</p>
+                <p class="sm:w-28 text-black/55 text-sm">{{ variant.name }}</p>
                 <div class="flex flex-wrap gap-2">
                   <UButton
                     v-for="values in variant.values"
@@ -87,7 +89,7 @@
                       formProduct[variant.name] === values ? 'outline' : 'solid'
                     "
                     :ui="{
-                      base: 'min-w-20 justify-center',
+                      base: 'min-w-16 sm:min-w-20 justify-center',
                       padding: {
                         sm: 'px-2 py-2',
                       },
@@ -102,7 +104,7 @@
           </div>
 
           <div class="flex gap-2 items-center mt-6">
-            <p class="w-28 text-black/55 text-sm">Kuantitas</p>
+            <p class="sm:w-28 text-black/55 text-sm">Kuantitas</p>
             <BaseInputQuantity
               v-model="formProduct.quantity"
               :max="detailProduct.stock || 0"
@@ -110,7 +112,7 @@
           </div>
 
           <UButton
-            class="mt-6"
+            class="mt-4 sm:mt-6 w-full sm:w-auto"
             variant="soft"
             :disabled="statusCart === 'pending'"
             @click="handleAddToCart"
@@ -119,9 +121,9 @@
             Masukkan Keranjang
           </UButton>
           <hr class="my-5" />
-          <div class="flex gap-5">
-            <div class="flex gap-2">
-              <img src="~/assets/images/garansi.png" />
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-5">
+            <div class="flex gap-2 items-center">
+              <img src="~/assets/images/garansi.png" class="w-6 h-6" />
               <p class="text-black/80 text-sm">Garansi Syopee</p>
             </div>
             <p class="text-black/55 text-sm">
@@ -136,7 +138,7 @@
     <!-- Seller Product -->
     <UCard>
       <div class="product-seller">
-        <div class="flex gap-6 items-center w-96">
+        <div class="flex gap-4 sm:gap-6 items-center w-full md:w-96">
           <UAvatar
             :alt="detailProduct.seller.store_name"
             size="3xl"
@@ -154,8 +156,10 @@
             </UButton>
           </div>
         </div>
-        <div class="w-[1px] bg-slate-200" />
-        <div class="grid grid-cols-2 items-center flex-1">
+        <div class="hidden md:block w-[1px] bg-slate-200" />
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-0 items-center flex-1"
+        >
           <div class="flex gap-2 text-sm">
             <p class="text-black/40 w-36">Penilaian</p>
             <p class="text-primary">{{ detailProduct.seller.rating_count }}</p>
@@ -246,7 +250,9 @@
           <UIcon name="i-heroicons:chevron-right" />
         </UButton>
       </div>
-      <div class="grid grid-cols-6 gap-3">
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"
+      >
         <BaseProductCard
           v-for="product in detailProduct.other_product"
           :key="`product-${product.uuid}`"
@@ -428,7 +434,16 @@ useSeoMeta({
 
 <style scoped>
 .product-briefing {
-  @apply flex gap-8;
+  /* Kolom di mobile, baris di md+ */
+  @apply flex flex-col md:flex-row gap-6 md:gap-8;
+}
+
+/* Pastikan gambar/caraousel responsif */
+.product-image {
+  @apply w-full md:w-[450px] md:shrink-0;
+}
+.product-image :where(img, video) {
+  @apply w-full h-auto;
 }
 
 .product-information {
@@ -437,12 +452,12 @@ useSeoMeta({
 
 .product-summary {
   @apply mt-2;
-  @apply flex gap-4;
-  @apply divide-x;
+  @apply flex flex-wrap items-center gap-3 md:gap-4;
+  @apply md:divide-x;
 }
 
 .product-summary > div:not(:first-child) {
-  @apply pl-4;
+  @apply md:pl-4;
 }
 
 .product-summary-item {
@@ -459,14 +474,14 @@ span.product-summary-item-description {
 }
 
 .product-price {
-  @apply flex gap-4 items-center;
+  @apply flex flex-wrap gap-3 sm:gap-4 items-center;
   @apply my-3;
   @apply bg-gray-50;
-  @apply p-4;
+  @apply p-3 sm:p-4;
 }
 
 .product-seller {
-  @apply flex gap-6 items-stretch;
+  @apply flex flex-col md:flex-row gap-4 md:gap-6 items-stretch;
 }
 
 .product-detail-title {
@@ -483,10 +498,10 @@ span.product-summary-item-description {
 }
 
 .product-detail-item {
-  @apply flex gap-2;
+  @apply flex flex-col sm:flex-row gap-1 sm:gap-2;
 }
 
 .product-detail-item > p {
-  @apply text-black/40 text-sm w-40;
+  @apply text-black/40 text-sm sm:w-40;
 }
 </style>

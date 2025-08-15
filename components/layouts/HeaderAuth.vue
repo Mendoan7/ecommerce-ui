@@ -4,14 +4,14 @@
     <div class="header-bottom">
       <UContainer class="header-bottom-container">
         <BaseLogo />
-        <LayoutsSearchBar v-if="defaultMeta.showSearch" class="flex-1" />
+        <LayoutsSearchBar v-if="defaultMeta.showSearch" class="search-flex" />
         <UChip
           v-if="defaultMeta.showCart"
           :text="countCart"
           size="2xl"
           :show="countCart > 0"
         >
-          <UButton variant="link" to="/cart">
+          <UButton variant="link" to="/cart" class="icon-cart-btn">
             <IconCart />
           </UButton>
         </UChip>
@@ -22,12 +22,6 @@
 
 <script setup>
 const route = useRoute();
-
-// const meta = {
-//     showProfile: false,
-//     showSearch: false
-//     showCart: false
-// }
 
 const defaultMeta = computed(() => {
   return {
@@ -68,12 +62,17 @@ const countCart = computed(() =>
 
 .header-auth .header-bottom {
   @apply bg-gradient-to-b from-primary to-[#FF6633];
-  @apply flex-1;
-  @apply py-6;
+  @apply py-4 sm:py-6;
 }
 
 .header-bottom-container {
-  @apply flex justify-between items-center gap-12;
-  @apply h-full;
+  @apply flex flex-col sm:flex-row gap-3 sm:gap-6 items-stretch sm:items-center justify-between;
+}
+
+.search-flex {
+  @apply flex-1;
+}
+.icon-cart-btn {
+  @apply p-0;
 }
 </style>

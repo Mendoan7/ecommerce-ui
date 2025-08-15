@@ -1,6 +1,6 @@
 <template>
   <section class="bg-white">
-    <UContainer class="py-14">
+    <UContainer class="py-10 sm:py-14">
       <div class="max-w-[500px] mx-auto">
         <div class="step-header">
           <template v-for="(step, index) in registerStep" :key="step.key">
@@ -12,7 +12,7 @@
             </div>
             <IconStepArrow
               v-if="index < registerStep.length - 1"
-              class="mb-6"
+              class="mb-6 hidden sm:block"
             />
           </template>
         </div>
@@ -191,17 +191,17 @@ function handleBack(stepKey) {
 }
 </script>
 
-<style scopde>
+<style scoped>
 .auth-shadow {
   box-shadow: 0px 3px 10px 0px #00000024;
 }
 
 .step-header {
-  @apply flex justify-between gap-2 items-center;
-  @apply mb-16;
+  @apply flex justify-between gap-3 items-center mb-10 sm:mb-16 overflow-x-auto;
+  @apply px-1 -mx-1; /* beri ruang saat scroll */
 }
 .step-item {
-  @apply flex flex-col items-center;
+  @apply flex flex-col items-center shrink-0;
 }
 
 .step-item-icon {
@@ -211,7 +211,7 @@ function handleBack(stepKey) {
 }
 
 .step-item-title {
-  @apply text-black/25 text-xs font-normal mt-1;
+  @apply text-black/40 text-[11px] sm:text-xs font-normal mt-1 text-center;
 }
 
 .step-item.is-done .step-item-icon {

@@ -6,7 +6,7 @@
           variant="link"
           color="white"
           :padded="false"
-          class="px-3"
+          class="px-2 sm:px-3"
           to="/register"
         >
           Daftar
@@ -15,7 +15,7 @@
           variant="link"
           color="white"
           :padded="false"
-          class="px-3"
+          class="px-2 sm:px-3"
           to="/login"
         >
           Login
@@ -23,9 +23,14 @@
       </template>
       <UDropdown v-else :items="profileItems">
         <template #default="{ open }">
-          <div class="flex gap-2 items-center">
-            <UAvatar :src="session.profile.photo_url" :alt="session.profile.name" icon="i-heroicons:user" img-class="object-cover"/>
-            <p>{{session.profile.name}}</p>
+          <div class="flex gap-2 sm:gap-3 items-center">
+            <UAvatar
+              :src="session.profile.photo_url"
+              :alt="session.profile.name"
+              icon="i-heroicons:user"
+              img-class="object-cover"
+            />
+            <p>{{ session.profile.name }}</p>
             <UIcon
               name="i-heroicons:chevron-down-20-solid"
               class="w-4 h-4 transition-all"
@@ -46,17 +51,17 @@ const profileItems = [
     {
       label: "Akun Saya",
       icon: "i-heroicons:user",
-      to: '/my-account/profile'
+      to: "/my-account/profile",
     },
     {
       label: "Switch to Seller",
       icon: "i-heroicons:arrow-path",
-      to: '/seller'
+      to: "/seller",
     },
     {
       label: "Logout",
       icon: "i-heroicons:arrow-left-start-on-rectangle",
-      click: session.logout
+      click: session.logout,
     },
   ],
 ];
@@ -70,7 +75,7 @@ const profileItems = [
 }
 
 .header-profile-container {
-  @apply flex justify-end;
+  @apply flex justify-end items-center gap-2 sm:gap-4;
   @apply divide-x divide-gray-50/50;
 }
 </style>

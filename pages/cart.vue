@@ -23,7 +23,7 @@
         </p>
       </div>
       <template v-else>
-        <UCard>
+        <UCard class="hidden md:block">
           <div class="cart-header">
             <div class="w-[46%]">Produk</div>
             <div class="text-center w-[15%]">Harga Satuan</div>
@@ -59,7 +59,7 @@
           }"
         >
           <template #header>
-            <div class="flex justify-end gap-40">
+            <div class="voucher-header">
               <div class="flex gap-1 items-center font-medium">
                 <IconVoucher />
                 Voucher Syopee
@@ -80,8 +80,8 @@
           </template>
 
           <template #default>
-            <div class="flex justify-end">
-              <div class="flex items-center gap-5">
+            <div class="coin-row">
+              <div class="coin-left">
                 <UCheckbox
                   v-model="useCoin"
                   :disabled="
@@ -90,7 +90,7 @@
                   @change="handlePayWithCoin"
                 >
                   <template #label>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 items-center">
                       <IconCoin />
                       <span class="font-medium">Koin Syopee</span>
                     </div>
@@ -100,7 +100,7 @@
                   Saldo Koin
                   {{ session.profile.balance ? coinBalance : "Tidak Cukup" }}
                 </span>
-                <div class="flex justify-end flex-1 min-w-48">
+                <div class="coin-right">
                   <span class="text-gray-300">-Rp{{ payWithCoin }}</span>
                 </div>
               </div>
@@ -108,8 +108,8 @@
           </template>
 
           <template #footer>
-            <div class="flex justify-end item">
-              <div class="flex gap-4">
+            <div class="cart-footer">
+              <div class="cart-total">
                 <div>
                   <!-- Rincian promosi -->
                   <div class="flex items-center gap-1">
@@ -142,7 +142,7 @@
                 </div>
 
                 <UButton
-                  class="px-9 min-w-52 justify-center"
+                  class="cart-button"
                   :disabled="statusCoin === 'pending'"
                   @click="handleCheckout"
                   >Checkout</UButton
@@ -254,14 +254,41 @@ function handleCheckout() {
 </script>
 
 <style scoped>
+/* ===== Header kolom (desktop only) ===== */
 .cart-header {
-  @apply flex items-center;
-  @apply text-gray-500 text-sm font-normal;
+  /* Grid 5 kolom: 46% / 15% / 15% / 15% / 9%  */
+  display: grid;
+  grid-template-columns: 46% 15% 15% 15% 9%;
+  @apply items-center text-gray-500 text-sm font-normal py-3 px-2;
 }
 
-/* .cart-product {
-  @apply flex items-center;
-  @apply text-gray-500 text-sm font-normal;
-  @apply py-5;
-} */
+/* ===== Voucher header ===== */
+.voucher-header {
+  /* mobile: stack; desktop: kanan-kiri */
+  @apply flex flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-40;
+}
+
+/* ===== Baris koin ===== */
+.coin-row {
+  /* mobile: dua baris; desktop: sejajar kanan */
+  @apply flex flex-col gap-3 md:flex-row md:items-center md:justify-end;
+}
+.coin-row .coin-left {
+  @apply flex items-center gap-4 flex-wrap;
+}
+.coin-row .coin-right {
+  @apply flex justify-end flex-1 min-w-48;
+}
+
+/* ===== Footer total + checkout ===== */
+.cart-footer {
+  /* mobile: stack; desktop: sejajar kanan */
+  @apply flex flex-col gap-3 md:flex-row md:items-center md:justify-end;
+}
+.cart-total {
+  @apply flex flex-col gap-2;
+}
+.cart-button {
+  @apply px-9 min-w-52 justify-center w-full md:w-auto;
+}
 </style>

@@ -2,10 +2,10 @@
   <footer class="footer">
     <UContainer class="footer-content">
       <div class="footer-top">
-        <div>
+        <div class="footer-col">
           <h3>Layanan Pelanggan</h3>
           <nav>
-            <ul>
+            <ul class="space-y-1">
               <li v-for="item in layananPengguna" :key="`${item}`">
                 <UButton variant="link" class="footer-list text-black/65">
                   {{ item }}
@@ -14,10 +14,10 @@
             </ul>
           </nav>
         </div>
-        <div>
+        <div class="footer-col">
           <h3>Jelajahi</h3>
           <nav>
-            <ul>
+            <ul class="space-y-1">
               <li v-for="item in jelajahi" :key="`${item}`">
                 <UButton variant="link" class="footer-list text-black/65">
                   {{ item }}
@@ -26,27 +26,27 @@
             </ul>
           </nav>
         </div>
-        <div>
+        <div class="footer-col">
           <div>
             <h3>Pembayaran</h3>
             <div class="flex flex-wrap gap-2">
               <div class="footer-item">
-                <img src="~/assets/images/seabank.png" />
+                <img src="~/assets/images/seabank.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/bca.png" />
+                <img src="~/assets/images/bca.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/bni.png" />
+                <img src="~/assets/images/bni.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/bri.png" />
+                <img src="~/assets/images/bri.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/bsi.png" />
+                <img src="~/assets/images/bsi.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/cimb.png" />
+                <img src="~/assets/images/cimb.png" class="footer-logo" />
               </div>
             </div>
           </div>
@@ -55,31 +55,32 @@
             <h3>Pengiriman</h3>
             <div class="flex flex-wrap gap-2">
               <div class="footer-item">
-                <img src="~/assets/images/spx.png" />
+                <img src="~/assets/images/spx.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/jnt.png" />
+                <img src="~/assets/images/jnt.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/jne.png" />
+                <img src="~/assets/images/jne.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/ninja.png" />
+                <img src="~/assets/images/ninja.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/sicepat.png" />
+                <img src="~/assets/images/sicepat.png" class="footer-logo" />
               </div>
               <div class="footer-item">
-                <img src="~/assets/images/gosend.png" />
+                <img src="~/assets/images/gosend.png" class="footer-logo" />
               </div>
             </div>
           </div>
         </div>
-        <div>
+        <!-- Social $ Security -->
+        <div class="footer-col">
           <div>
             <h3>Ikuti Kami</h3>
             <nav>
-              <ul>
+              <ul class="space-y-1">
                 <li>
                   <UButton
                     variant="link"
@@ -88,7 +89,10 @@
                     class="footer-list"
                   >
                     <template #leading>
-                      <img src="~/assets/images/facebook.png" />
+                      <img
+                        src="~/assets/images/facebook.png"
+                        class="icon-social"
+                      />
                     </template>
                     Facebook
                   </UButton>
@@ -101,7 +105,10 @@
                     class="footer-list"
                   >
                     <template #leading>
-                      <img src="~/assets/images/instagram.png" />
+                      <img
+                        src="~/assets/images/instagram.png"
+                        class="icon-social"
+                      />
                     </template>
                     Instagram
                   </UButton>
@@ -114,7 +121,10 @@
                     class="footer-list"
                   >
                     <template #leading>
-                      <img src="~/assets/images/twitter.png" />
+                      <img
+                        src="~/assets/images/twitter.png"
+                        class="icon-social"
+                      />
                     </template>
                     Twitter
                   </UButton>
@@ -127,7 +137,10 @@
                     class="footer-list"
                   >
                     <template #leading>
-                      <img src="~/assets/images/linkedin.png" />
+                      <img
+                        src="~/assets/images/linkedin.png"
+                        class="icon-social"
+                      />
                     </template>
                     Linkedin
                   </UButton>
@@ -138,27 +151,29 @@
           <div class="mt-6">
             <h3>Keamanan</h3>
             <div class="footer-item size-lg">
-              <img src="~/assets/images/certified.png" />
+              <img src="~/assets/images/certified.png" class="footer-logo" />
             </div>
           </div>
         </div>
-        <div>
+        <!-- Download App -->
+        <div class="footer-col">
           <h3>Download Aplikasi Shopee</h3>
-          <div class="flex gap-3">
-            <img src="~/assets/images/qrcode.png" />
+          <div class="flex gap-3 items-start sm:items-center">
+            <img src="~/assets/images/qrcode.png" class="qr-img" />
             <div class="flex flex-col gap-2">
-              <img src="~/assets/images/appstore.png" />
-              <img src="~/assets/images/playstore.png" />
-              <img src="~/assets/images/appgalery.png" />
+              <img src="~/assets/images/appstore.png" class="store-badge" />
+              <img src="~/assets/images/playstore.png" class="store-badge" />
+              <img src="~/assets/images/appgalery.png" class="store-badge" />
             </div>
           </div>
         </div>
       </div>
+      <!-- Buttom -->
       <div class="footer-bottom">
         <p class="footer-text">© Syopee 2025. Hak Cipta Dilindungi</p>
         <div class="flex gap-1 items-center">
           <span class="footer-text">Negara:</span>
-          <div class="flex divide-x divide-black/20">
+          <div class="flex flex-wrap divide-x divide-black/20">
             <UButton
               v-for="item in country"
               :key="item"
@@ -221,36 +236,45 @@ const country = [
 }
 
 .footer-top {
-  @apply grid grid-cols-5;
-  @apply pt-11 pb-8;
-  @apply border-b;
+  @apply grid gap-8 sm:gap-10 pt-8 sm:pt-11 pb-8 border-b;
+  @apply grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+}
+.footer-col {
+  @apply min-w-0;
 }
 
 .footer h3 {
   @apply font-bold text-xs;
-  @apply mb-5;
+  @apply sm:text-sm mb-4 sm:mb-5;
 }
-
 .footer-list {
-  @apply text-xs text-black/65;
+  @apply text-xs sm:text-sm text-black/65;
   @apply font-normal;
 }
 
 .footer-item {
-  @apply w-[60px] h-[30px];
-  @apply bg-white rounded-sm p-1 shadow;
+  @apply w-[60px] h-[30px] bg-white rounded-sm p-1 shadow flex items-center justify-center;
 }
-
-.footer-item img {
-  @apply w-full;
-}
-
 .footer-item.size-lg {
   @apply w-[112px] h-[52px];
 }
+.footer-logo {
+  @apply w-auto h-4 sm:h-6 object-contain;
+}
+.icon-social {
+  @apply w-4 h-4 object-contain;
+}
+.qr-img {
+  @apply w-24 h-24 sm:w-28 sm:h-28 object-contain;
+}
+.store-badge {
+  @apply h-8 sm:h-9 w-auto object-contain;
+}
 
 .footer-bottom {
-  @apply py-10;
-  @apply flex justify-between;
+  @apply py-6 sm:py-10 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-start sm:items-center;
+}
+.footer-text {
+  @apply text-xs sm:text-sm text-black/70;
 }
 </style>

@@ -1,33 +1,45 @@
 <template>
-  <section class="bg-primary">
-    <UContainer class="grid grid-cols-2 h-full py-20">
-      <div class="flex justify-center items-center">
-        <div class="flex flex-col gap-14 text-white text-center">
-          <h1 class="text-8xl">Syopee</h1>
-          <p>Tempat Belanja Online No. 1<br />di Asia Tengara dan Taiwan</p>
+  <section class="auth-hero">
+    <UContainer
+      class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center py-12 sm:py-16"
+    >
+      <!-- Left Logo -->
+      <div class="flex justify-center md:justify-start">
+        <div
+          class="flex flex-col gap-6 sm:gap-10 text-white text-center md:text-left"
+        >
+          <h1 class="auth-hero-title">Syopee</h1>
+          <p class="auth-hero-subtitle">
+            Tempat Belanja Online No. 1<br class="hidden sm:block" />
+            di Asia Tengara dan Taiwan
+          </p>
         </div>
       </div>
-      <div>
+      <!-- Right Form -->
+      <div class="w-full">
         <UCard
-          class="w-96"
+          class="auth-card w-full max-w-md mx-auto"
           :ui="{
             rounded: 'rounded-sm',
           }"
         >
-          <h2>Login</h2>
-          <form class="mt-7 space-y-7" @submit.prevent="handleSubmit">
+          <h2 class="auth-card-title">Login</h2>
+          <form
+            class="mt-6 sm:mt-7 space-y-6 sm:space-y-7"
+            @submit.prevent="handleSubmit"
+          >
             <UFormGroup :error="v$.phone_email.$errors?.[0]?.$message">
-              <UInput 
-                v-model="form.phone_email" 
-                placeholder="No. Handphone/Email" 
+              <UInput
+                v-model="form.phone_email"
+                placeholder="No. Handphone/Email"
                 size="lg"
               />
             </UFormGroup>
             <UFormGroup :error="v$.password.$errors?.[0]?.$message">
               <BaseInputPassword
-                v-model="form.password" 
-                placeholder="Password" 
-                size="lg" 
+                v-model="form.password"
+                placeholder="Password"
+                size="lg"
               />
             </UFormGroup>
             <div>
@@ -54,7 +66,7 @@
             :ui="{
               label: 'text-gray-300 font-normal',
             }"
-          /> 
+          />
           <BaseButtonGoogleSignIn />
           <p class="text-sm font-normal text-black/25 text-center mt-8">
             Baru di Syopee?
@@ -153,4 +165,20 @@ async function handleSubmit() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.auth-hero {
+  @apply bg-primary;
+}
+.auth-hero-title {
+  @apply text-5xl sm:text-6xl md:text-7xl;
+}
+.auth-hero-subtitle {
+  @apply text-sm sm:text-base text-white/90;
+}
+.auth-card {
+  @apply bg-white;
+}
+.auth-card-title {
+  @apply text-lg;
+}
+</style>

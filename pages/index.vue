@@ -1,14 +1,12 @@
 <template>
-  <div class="flex flex-col gap-6 pb-6">
+  <div class="flex flex-col gap-6 pb-6 sm:gap-8 sm:pb-10">
     <section class="banner-section">
       <UContainer>
-        <BaseCarousel
-          width="796px"
-          height="235px"
-          aspect-ratio="3.39/1"
-          :items="items"
-          class="mx-auto"
-        />
+        <div
+          class="mx-auto w-full max-w-[796px] aspect-[3.39/1] overflow-hidden rounded-lg"
+        >
+          <BaseCarousel aspect-ratio="3.39/1" :items="items" class="mx-auto" />
+        </div>
       </UContainer>
     </section>
     <section class="category-section">
@@ -24,6 +22,7 @@
               :title="cat.name"
               :image="cat.icon"
               :slug="cat.slug"
+              class="snap-start"
             />
           </div>
         </div>
@@ -52,7 +51,7 @@
       <UButton
         v-if="!session.token"
         color="white"
-        class="font-normal px-28"
+        class="font-normal w-full sm:w-auto sm:px-10"
         to="/login"
       >
         Login untuk Lihat Lainnya
@@ -60,7 +59,7 @@
       <UButton
         v-else-if="productList?.next_page_url"
         color="white"
-        class="font-normal px-28"
+        class="font-normal w-full sm:w-auto sm:px-10"
         @click="loadMore"
       >
         Lihat Lainnya
@@ -145,40 +144,66 @@ useSeoMeta({
 
 <style scoped>
 .banner-section {
-  @apply bg-white py-7;
+  @apply bg-white py-4 sm:py-7;
 }
-
 .category-section-card {
   @apply bg-white;
 }
 .category-section-header {
-  @apply p-5;
-  @apply border-b border-black/5;
+  @apply p-4 sm:p-5 border-b border-black/5;
 }
-
 .category-section-header h2 {
-  @apply text-base text-black/55 font-medium;
-  @apply uppercase;
+  @apply text-sm sm:text-base text-black/55 font-medium uppercase;
 }
-
-.category-section-content {
-  @apply grid grid-cols-7;
-}
-
 .product-section-header {
-  @apply bg-white;
-  @apply border-b-4 border-primary;
-  @apply p-5;
+  @apply bg-white border-b-4 border-primary p-4 sm:p-5;
 }
-
 .product-section-header h2 {
-  @apply text-base text-primary font-medium;
-  @apply text-center;
-  @apply uppercase;
+  @apply text-sm sm:text-base text-primary font-medium text-center uppercase;
+}
+.product-section-content {
+  @apply grid gap-3 sm:gap-4 mt-3
+  grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
 }
 
-.product-section-content {
-  @apply grid grid-cols-6 gap-3;
-  @apply mt-3;
+/* Mobile: 2 baris + swipe ke kanan */
+.category-section-content {
+  --w: 9rem; /* lebar kolom saat swipe */
+  @apply grid gap-3 mt-3 grid-rows-2 grid-flow-col
+         overflow-x-auto snap-x snap-mandatory
+         overscroll-x-contain -mx-2 px-2;
+  grid-auto-columns: var(--w);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.category-section-content::-webkit-scrollbar {
+  display: none;
+}
+.category-section-content > * {
+  @apply snap-start;
+}
+
+/* ≥sm: balik ke grid biasa multi-kolom */
+@screen sm {
+  .category-section-content {
+    @apply grid-rows-none grid-flow-row overflow-visible snap-none
+           mx-0 px-0 gap-4 grid-cols-3;
+    grid-auto-columns: unset;
+  }
+}
+@screen md {
+  .category-section-content {
+    @apply grid-cols-4;
+  }
+}
+@screen lg {
+  .category-section-content {
+    @apply grid-cols-6;
+  }
+}
+@screen xl {
+  .category-section-content {
+    @apply grid-cols-7;
+  }
 }
 </style>
