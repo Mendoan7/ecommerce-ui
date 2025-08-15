@@ -1,10 +1,11 @@
 <template>
   <UContainer id="search-section">
-    <div class="search-filter">
+    <div class="search-filter" v-show="isFilterOpen || isDesktop">
       <div class="filter-title">
         <IconFilter />
         <h2>Filter</h2>
       </div>
+
       <div class="filter-item">
         <h3>Batas Harga</h3>
         <div class="flex gap-2 items-center">
@@ -28,7 +29,7 @@
         <p v-if="activeParent" class="text-primary font-medium mb-1">
           {{ activeParent.name }}
         </p>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 max-h-[18rem] overflow-auto pr-1">
           <UCheckbox
             v-for="cat in sidebarChildren"
             :key="`cat-${cat.slug}`"
@@ -42,6 +43,20 @@
       <UButton block class="py-2" @click="resetFilter">HAPUS SEMUA</UButton>
     </div>
     <div class="search-result">
+      <!-- Toggle hanya mobile -->
+      <div class="filter-toggle-mobile">
+        <UButton
+          :icon="
+            isFilterOpen
+              ? 'i-heroicons:chevron-up-20-solid'
+              : 'i-heroicons:chevron-down-20-solid'
+          "
+          :label="isFilterOpen ? 'Sembunyikan Filter' : 'Tampilkan Filter'"
+          color="white"
+          @click="toggleFilter"
+        />
+      </div>
+      <!-- End toggle mobile -->
       <div v-if="route.query.search" class="search-keyword">
         <IconLamp />
         <p>
@@ -291,6 +306,8 @@ useSeoMeta({
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
+const isFilterOpen = ref(false);
+const isDesktop = ref(false);
 
 // --- Guards to avoid hydration mismatch ---
 const isClientReady = ref(false);
@@ -443,6 +460,23 @@ function resetFilter() {
   temporaryPrice.maximum_price = undefined;
 }
 
+onMounted(() => {
+  const mq = window.matchMedia("(min-width: 768px)"); // md breakpoint Tailwind
+  const apply = () => {
+    isDesktop.value = mq.matches;
+    // Desktop: selalu terbuka; Mobile: default tertutup
+    isFilterOpen.value = mq.matches ? true : false;
+  };
+  apply();
+  mq.addEventListener("change", apply);
+  onUnmounted(() => mq.removeEventListener("change", apply));
+});
+
+function toggleFilter() {
+  // di desktop tetap open; di mobile bisa toggle
+  if (!isDesktop.value) isFilterOpen.value = !isFilterOpen.value;
+}
+
 // --- SEO ---
 const titleMeta = computed(() => {
   if (route.query?.search) return `Sedang mencari produk ${route.query.search}`;
@@ -463,50 +497,74 @@ useSeoMeta({
 #search-section {
   @apply py-6 flex gap-4;
 }
-.search-filter {
-  @apply flex flex-col gap-5;
-  @apply w-48;
+
+/* Mobile: stack filter & hasil */
+@media (max-width: 767px) {
+  #search-section {
+    @apply flex-col;
+  }
 }
+
+/* Sidebar */
+.search-filter {
+  @apply flex flex-col gap-5 w-60;
+}
+/* Desktop: sticky & fixed width */
+@media (min-width: 768px) {
+  .search-filter {
+    @apply sticky top-24 shrink-0;
+  }
+}
+/* Mobile: full width */
+@media (max-width: 767px) {
+  .search-filter {
+    @apply w-full;
+  }
+}
+
+/* Toggle bar (mobile only) */
+.filter-toggle-mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .filter-toggle-mobile {
+    display: block;
+    margin-bottom: 0.5rem; /* gap kecil */
+  }
+}
+
 .filter-title {
   @apply flex gap-2 items-center;
 }
 .filter-title h2 {
-  @apply text-base font-bold text-black/80;
-  @apply uppercase;
+  @apply text-base font-bold text-black/80 uppercase;
 }
 
 .filter-item {
   @apply flex flex-col gap-5;
 }
-
 .filter-item h3 {
   @apply text-sm text-black/80 font-medium;
 }
 
 .search-result {
-  @apply flex-1;
+  @apply flex-1 min-w-0;
 }
 
 .search-keyword {
-  @apply flex items-center gap-2;
-  @apply text-gray-600;
+  @apply flex items-center gap-2 text-gray-600;
 }
-
 .search-keyword span {
   @apply text-primary;
 }
 
 .search-sort {
-  @apply flex items-center gap-2 justify-between;
-  @apply px-5 py-3;
-  @apply bg-black/5;
-  @apply mt-4;
+  @apply flex items-center gap-2 justify-between px-5 py-3 bg-black/5 mt-4;
+  @apply flex-wrap;
 }
-
 .search-sort-control {
-  @apply flex gap-3 items-center;
+  @apply flex gap-3 items-center flex-wrap;
 }
-
 .search-sort-control p {
   @apply text-gray-600 text-sm font-normal;
 }
@@ -514,17 +572,37 @@ useSeoMeta({
 .search-sort-pagination {
   @apply flex gap-5 items-center;
 }
-
 .search-sort-pagination p {
   @apply text-sm font-normal text-black/80;
 }
-
 .search-sort-pagination span {
   @apply text-primary;
 }
 
+/* Mobile: sort section stack */
+@media (max-width: 639px) {
+  .search-sort {
+    @apply flex-col items-start gap-3;
+  }
+  .search-sort-pagination {
+    @apply w-full justify-between;
+  }
+}
+
 .search-content {
-  @apply grid grid-cols-5 gap-3;
-  @apply mt-3;
+  @apply grid gap-3 mt-3;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* Tablet: 3 kolom, Mobile: 2 kolom */
+@media (max-width: 1023px) {
+  .search-content {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 639px) {
+  .search-content {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

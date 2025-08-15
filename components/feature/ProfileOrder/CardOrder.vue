@@ -9,33 +9,52 @@
     }"
   >
     <template #default>
-      <div class="flex justify-between gap-4 items-center">
-        <div class="flex gap-2 items-center">
-          <span class="font-semibold">{{ order?.seller?.store_name }}</span>
+      <div
+        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-semibold truncate">{{
+            order?.seller?.store_name
+          }}</span>
           <UButton
             color="white"
             size="xs"
             :to="`/shop/${order?.seller?.username}`"
+            class="shrink-0"
           >
             <IconShop /> Kunjungi Toko
           </UButton>
         </div>
-        <div class="divide-x flex">
-          <div class="flex gap-2 items-center text-teal-500 pr-2">
+        <!-- Status -->
+        <div
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:gap-x-4 sm:divide-x"
+        >
+          <div
+            class="flex items-center gap-1 pr-0 sm:pr-3 text-teal-500 text-xs sm:text-sm"
+          >
             <UIcon
               v-if="order?.last_status?.status === 'on_delivery'"
               name="i-heroicons:truck"
               class="w-4 h-4"
             />
-            <span>{{ order?.last_status?.description }}</span>
+            <span class="truncate max-w-[12rem] sm:max-w-none">
+              {{ order?.last_status?.description }}
+            </span>
           </div>
-          <span class="text-primary pl-2">{{
-            STATUS_ORDER?.[order?.last_status?.status]
-          }}</span>
+          <span
+            class="text-primary pl-0 sm:pl-3 text-xs sm:text-sm font-medium"
+          >
+            {{ STATUS_ORDER?.[order?.last_status?.status] }}
+          </span>
         </div>
       </div>
+
       <hr class="my-3" />
-      <NuxtLink class="space-y-3" :to="`/my-account/orders/${order.uuid}`">
+      <!-- Product List -->
+      <NuxtLink
+        class="block space-y-3"
+        :to="`/my-account/orders/${order.uuid}`"
+      >
         <FeatureProfileOrderCardProduct
           v-for="product in order?.items || []"
           :key="`order-${order.uuid}-product-${product.uuid}`"
@@ -43,24 +62,32 @@
         />
       </NuxtLink>
     </template>
+
     <template #footer>
-      <div class="space-y-6">
-        <div class="flex justify-end">
+      <div class="space-y-4 sm:space-y-6">
+        <div
+          class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-end"
+        >
           <div class="flex gap-2 items-center">
             <img src="~/assets/images/garansi.png" class="h-4 w-4" />
-            <span class="text-black/80">Total Pesanan:</span>
-            <span class="text-primary text-2xl">Rp{{ totalPrice }}</span>
+            <span class="text-black/80 text-sm sm:text-base"
+              >Total Pesanan:</span
+            >
+            <span class="text-primary text-xl sm:text-2xl"
+              >Rp{{ totalPrice }}</span
+            >
           </div>
         </div>
+        <!-- Review CTA -->
         <div
           v-if="
             order?.last_status?.status === 'done' &&
             canReview &&
             !order?.items?.[0]?.is_reviewed
           "
-          class="flex justify-between items-center gap-4"
+          class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div class="text-xs">
+          <div class="text-xs sm:text-sm">
             <p class="text-black/55">
               Nilai produk sebelum
               <span class="underline">{{ lastReviewDate }}</span>
@@ -69,7 +96,7 @@
           </div>
           <UButton
             label="Nilai"
-            class="min-w-40 justify-center"
+            class="w-full sm:w-auto min-w-40 justify-center"
             @click="emit('review', order)"
           />
         </div>
@@ -110,4 +137,4 @@ const canReview = computed(() => {
 });
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped></style>

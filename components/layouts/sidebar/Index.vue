@@ -1,5 +1,5 @@
 <template>
-  <nav>
+  <nav aria-label="Sidebar Navigation">
     <ul class="flex gap-6 flex-col">
       <li v-for="(item, index) in items" :key="`nav-${item.label}-${index}`">
         <LayoutsSidebarItem :item="item" />

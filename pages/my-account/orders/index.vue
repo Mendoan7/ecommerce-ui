@@ -1,19 +1,26 @@
 <template>
-  <div class="space-y-3">
-    <BaseTabs
-      v-model="formFilter.status"
-      :items="items"
-      :ui="{
-        list: {
-          height: 'h-full',
-          tab: {
-            font: 'font-normal',
-            height: 'h-14',
-          },
-        },
-      }"
-      :content="false"
-    />
+  <div class="space-y-4 md:space-y-5">
+    <div class="-mx-4 px-4 overflow-x-auto scrollbar-none md:overflow-visible">
+      <div class="min-w-max md:min-w-0">
+        <BaseTabs
+          v-model="formFilter.status"
+          :items="items"
+          :ui="{
+            list: {
+              height: 'h-full',
+              tab: {
+                font: 'font-normal',
+                height: 'h-12 md:h-14',
+              },
+            },
+          }"
+          :content="false"
+          class="tabs-responsive"
+        />
+      </div>
+    </div>
+
+    <!-- Search -->
     <UInput
       v-model="formFilter.search"
       leading-icon="i-heroicons:magnifying-glass"
@@ -21,22 +28,23 @@
       placeholder="Kamu bisa cari berdasarkan Nama Penjual, No. Pesanan atau Nama Produk"
       :ui="{
         color: {
-          white: {
-            outline: 'bg-gray-200/50 ring-0 placeholder-gray-500',
-          },
+          white: { outline: 'bg-gray-200/50 ring-0 placeholder-gray-500' },
         },
       }"
+      class="w-full"
     />
+
     <FeatureProfileOrderCardOrder
       v-for="(order, index) in data?.data || []"
       :key="`order-${index}`"
       :order="order"
       @review="handleReview"
     />
-    <div ref="observerElement" />
+
+    <div ref="observerElement" class="h-4" />
     <BaseLoading v-if="status === 'pending'" />
     <template v-else-if="(data?.data || []).length === 0">
-      <p class="text-sm font-medium text-black/55 py-4 text-center">
+      <p class="text-sm font-medium text-black/55 py-6 text-center">
         Tidak ada order yang ditemukan
       </p>
     </template>
@@ -178,4 +186,21 @@ function handleReloadData() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Sembunyikan scrollbar horizontal yang muncul di mobile untuk tabs */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Paksa tab nyaman di mobile: lebar minimum per item + gap */
+:deep(.tabs-responsive .tabs-list) {
+  @apply gap-2 md:gap-3;
+}
+:deep(.tabs-responsive .tab) {
+  @apply px-3 md:px-4 rounded-lg;
+  min-width: max-content;
+}
+</style>

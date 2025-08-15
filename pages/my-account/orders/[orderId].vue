@@ -2,7 +2,9 @@
   <BaseLoading v-if="status === 'pending'" />
   <div v-else class="text-sm text-black/80">
     <div class="bg-white divide-y divide-dashed">
-      <div class="flex justify-between gap-4 px-6 py-5">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5"
+      >
         <UButton
           label="Kembali"
           to="/my-account/orders"
@@ -10,40 +12,40 @@
           :padded="false"
           variant="link"
           color="gray"
+          class="w-max"
         />
-        <div class="divide-x">
-          <span class="px-4">NO. PESANAN. {{ data?.invoice_number }}</span>
-          <span class="px-4 uppercase text-primary">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:divide-x text-xs sm:text-sm"
+        >
+          <span class="px-0 sm:px-4 py-1 sm:py-0 text-right sm:text-left"
+            >NO. PESANAN. {{ data?.invoice_number }}</span
+          >
+          <span
+            class="px-0 sm:px-4 py-1 sm:py-0 uppercase text-primary text-right sm:text-left"
+          >
             {{ lastStatus?.description }}
           </span>
         </div>
       </div>
-      <div class="px-6 py-10">
+      <div class="px-4 sm:px-6 py-6 sm:py-10">
         <BaseTimelineHorizontal
           :items="timelineStatus"
-          class="grid grid-cols-5"
+          class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4"
         />
       </div>
-      <!-- <div class="bg-yellow-50/30 flex justify-end px-6 py-3">
-        <UButton
-          color="white"
-          class="min-w-56 justify-center"
-          label="Batalkan"
-        />
-      </div> -->
       <div
         v-if="lastStatus?.status === 'pending_payment'"
-        class="bg-yellow-50/30 flex justify-end px-6 py-3"
+        class="bg-yellow-50/30 flex flex-col sm:flex-row sm:justify-end gap-3 px-4 sm:px-6 py-3"
       >
         <UButton
-          class="min-w-56 justify-center"
+          class="w-full sm:w-auto sm:min-w-56 justify-center"
           label="Bayar"
           :to="`/checkout/payment/${data?.uuid}`"
         />
       </div>
       <div
         v-if="lastStatus?.status === 'on_delivery'"
-        class="bg-yellow-50/30 flex justify-between px-6 py-3 items-center"
+        class="bg-yellow-50/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3"
       >
         <p class="text-black/55">
           Produk diperkirakan akan sampai pada
@@ -52,7 +54,7 @@
           <span class="underline">{{ etd.end }}</span>
         </p>
         <UButton
-          class="min-w-56 justify-center"
+          class="w-full sm:w-auto sm:min-w-56 justify-center"
           label="Pesanan Selesai"
           :loading="statusDone === 'pending'"
           @click="handleDoneOrder"
@@ -61,7 +63,7 @@
 
       <div
         v-if="lastStatus?.status === 'done' && canReview"
-        class="bg-yellow-50/30 flex justify-between px-6 py-3 items-center"
+        class="bg-yellow-50/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3"
       >
         <p class="text-black/55">
           Nilai pesanan sebelum
@@ -69,14 +71,16 @@
           dan dapatkan maks. 25 Koin Syopo!
         </p>
         <UButton
-          class="min-w-56 justify-center"
+          class="w-full sm:w-auto sm:min-w-56 justify-center"
           label="Nilai"
           @click="handleReview"
         />
       </div>
-      <div class="px-6 py-5">
-        <div class="flex justify-between items-center">
-          <p class="text-xl">Alamat Pengiriman</p>
+      <div class="px-4 sm:px-6 py-5">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+        >
+          <p class="text-lg sm:text-xl">Alamat Pengiriman</p>
           <div class="text-right text-xs text-black/55">
             <p class="uppercase">
               {{ data?.courier }} - {{ data?.courier_type }}
@@ -84,8 +88,10 @@
             <p>XXXXXXXXX</p>
           </div>
         </div>
-        <div class="flex divide-x mt-3">
-          <div class="w-80 py-2 pr-3">
+        <div
+          class="mt-3 grid grid-cols-1 sm:grid-cols-[20rem,1fr] gap-4 sm:gap-6"
+        >
+          <div class="py-2">
             <p>{{ data?.address?.receiver_name }}</p>
             <p class="text-black/55 mt-2">
               {{ data?.address?.receiver_phone }}
@@ -98,20 +104,21 @@
               {{ data?.address?.address_note }}
             </p>
           </div>
-          <div class="pl-3">
+          <div>
             <BaseTimelineVertical :items="orderHistory" />
           </div>
         </div>
       </div>
     </div>
     <div class="bg-gray-50 divide-y">
-      <div class="px-6 py-3">
-        <div class="flex gap-2 items-center">
+      <div class="px-4 sm:px-6 py-3">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <span class="font-semibold">{{ data?.seller?.store_name }}</span>
           <UButton
             color="white"
             size="xs"
             :to="`/shop/${data?.seller?.username}`"
+            class="w-max"
           >
             <IconShop /> Kunjungi Toko
           </UButton>
@@ -127,19 +134,19 @@
           />
         </div>
       </div>
-      <div>
+      <div class="px-0 sm:px-0">
         <table class="order-price">
           <tr v-for="price in priceItem" :key="price.label">
             <td>
               <template v-if="price.label === 'Metode Pembayaran'">
-                <div class="flex items-center gap-2 justify-end">
+                <div class="flex items-center gap-2 justify-end sm:justify-end">
                   <img src="~/assets/images/garansi.png" class="h-4 w-4" />
                   <span>{{ price.label }}</span>
                 </div>
               </template>
               <template v-else>{{ price.label }}</template>
             </td>
-            <td>{{ price.value }}</td>
+            <td :class="price.class">{{ price.value }}</td>
           </tr>
         </table>
       </div>
@@ -282,18 +289,6 @@ const orderHistory = computed(() => {
     .sort((a, b) => new Date(b.time) - new Date(a.time));
 });
 
-// [
-//   {
-//     title: "Pesanan Dibayar",
-//     time: "11-08-2024 16:27",
-//     active: true,
-//   },
-//   {
-//     title: "Pesanan Dibuat",
-//     time: "11-08-2024 16:26",
-//   },
-// ]
-
 const priceItem = computed(() => [
   {
     label: "Subtotal Produk",
@@ -358,27 +353,51 @@ function handleReview() {
 table.order-price {
   @apply w-full;
 }
-
 .order-price tr td {
   @apply text-right;
   @apply border border-black/10 border-dashed;
 }
-
 .order-price tr td:first-child {
   @apply p-3;
   @apply text-black/55 text-xs;
   border-left: none;
 }
 .order-price tr td:last-child {
-  @apply px-6 py-3;
+  @apply px-4 sm:px-6 py-3;
   border-right: none;
 }
-
 .order-price tr:first-child td {
   border-top: none;
   width: 67%;
 }
 .order-price tr:last-child td {
   border-bottom: none;
+}
+
+/* ====== Mobile-friendly price table (stacked) ====== */
+@media (max-width: 639px) {
+  table.order-price,
+  .order-price tr,
+  .order-price td {
+    display: block;
+    width: 100%;
+  }
+  .order-price tr + tr {
+    margin-top: 0.5rem; /* gap antar item harga */
+  }
+  .order-price tr td {
+    border-left: none !important;
+    border-right: none !important;
+  }
+  .order-price tr td:first-child {
+    /* label & value dipisah baris; label tetap rata kiri */
+    @apply text-left;
+    padding-bottom: 0.25rem;
+  }
+  .order-price tr td:last-child {
+    /* nilai di baris berikutnya, bold sedikit */
+    @apply text-right font-medium;
+    padding-top: 0.25rem;
+  }
 }
 </style>
