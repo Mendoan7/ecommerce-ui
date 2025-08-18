@@ -1,7 +1,14 @@
 <template>
   <div class="default-layout">
-    <LayoutsHeaderAuth />
-    <main class="main-layout"><slot /></main>
+    <div class="hidden md:block">
+      <LayoutsHeaderAuth />
+    </div>
+    <div class="block md:hidden">
+      <LayoutsMobileHeaderAuth />
+    </div>
+    <main class="main-layout bg-[#F5F5F5]">
+      <slot />
+    </main>
     <LayoutsFooter />
   </div>
 </template>
@@ -10,12 +17,9 @@
 
 <style scoped>
 .default-layout {
-  @apply flex flex-col;
-  @apply min-h-screen;
+  @apply flex flex-col min-h-screen;
 }
-
 .main-layout {
   @apply flex-1;
-  @apply bg-[#F5F5F5];
 }
 </style>
