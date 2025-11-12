@@ -1,12 +1,17 @@
 <template>
   <div class="layouts-header-mobile md:hidden">
     <UContainer>
-      <div class="flex items-center gap-4">
-        <NuxtLink v-if="isMyAccount" to="/" aria-label="Beranda">
+      <div class="flex items-center gap-3 min-w-0">
+        <NuxtLink
+          v-if="isMyAccount"
+          to="/"
+          aria-label="Beranda"
+          class="shrink-0"
+        >
           <UIcon name="i-heroicons:home-20-solid" class="w-6 h-6" />
         </NuxtLink>
 
-        <LayoutsSearchBar class="w-full search" />
+        <LayoutsSearchBar class="search flex-1 min-w-0" />
 
         <ClientOnly>
           <UChip
@@ -26,7 +31,11 @@
           </UChip>
         </ClientOnly>
 
-        <NuxtLink :to="userLink" class="flex items-center" aria-label="Akun">
+        <NuxtLink
+          :to="userLink"
+          class="flex items-center shrink-0"
+          aria-label="Akun"
+        >
           <UAvatar
             :src="session.profile.photo_url"
             :alt="session.profile.name || 'Akun'"
@@ -76,7 +85,7 @@ const userLink = computed(() => (session.token ? "/my-account" : "/login"));
   @apply bg-gradient-to-b from-primary to-[#FF6633] py-3 text-white;
 }
 .search :deep(input) {
-  @apply h-10 rounded-full bg-white text-black placeholder:text-black/60 px-4;
+  @apply w-full h-10 rounded-full bg-white text-black placeholder:text-black/60 px-4;
   box-shadow: none !important;
 }
 </style>
