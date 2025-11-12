@@ -23,14 +23,16 @@
       </template>
       <UDropdown v-else :items="profileItems">
         <template #default="{ open }">
-          <div class="flex gap-2 sm:gap-3 items-center">
+          <div class="flex gap-2 sm:gap-3 items-center min-w-0">
             <UAvatar
               :src="session.profile.photo_url"
               :alt="session.profile.name"
               icon="i-heroicons:user"
               img-class="object-cover"
             />
-            <p>{{ session.profile.name }}</p>
+            <p class="max-w-[60vw] sm:max-w-none break-words">
+              {{ session.profile.name }}
+            </p>
             <UIcon
               name="i-heroicons:chevron-down-20-solid"
               class="w-4 h-4 transition-all"
@@ -75,7 +77,7 @@ const profileItems = [
 }
 
 .header-profile-container {
-  @apply flex justify-end items-center gap-2 sm:gap-4;
-  @apply divide-x divide-gray-50/50;
+  @apply flex justify-end items-center gap-2 sm:gap-4 flex-wrap;
+  @apply divide-x-0 sm:divide-x divide-gray-50/50;
 }
 </style>

@@ -12,7 +12,9 @@
     </div>
 
     <!-- Konten: putih di mobile, abu di desktop -->
-    <main class="main-layout bg-white md:bg-[#F5F5F5]">
+    <main
+      class="main-layout bg-white md:bg-[#F5F5F5] min-w-0 overflow-x-hidden"
+    >
       <slot />
     </main>
 
@@ -25,9 +27,9 @@
 
 <style scoped>
 .account-layout {
-  @apply flex flex-col min-h-screen;
+  @apply flex flex-col min-h-screen min-w-0;
 }
 .main-layout {
-  @apply flex-1;
+  @apply flex-1 min-w-0;
 }
 </style>

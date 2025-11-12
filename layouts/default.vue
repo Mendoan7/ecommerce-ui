@@ -6,7 +6,7 @@
     <div class="block md:hidden">
       <LayoutsMobileHeaderAuth />
     </div>
-    <main class="main-layout bg-[#F5F5F5]">
+    <main class="main-layout bg-[#F5F5F5] min-w-0 overflow-x-hidden">
       <slot />
     </main>
     <LayoutsFooter />
@@ -17,9 +17,9 @@
 
 <style scoped>
 .default-layout {
-  @apply flex flex-col min-h-screen;
+  @apply flex flex-col min-h-screen min-w-0;
 }
 .main-layout {
-  @apply flex-1;
+  @apply flex-1 min-w-0;
 }
 </style>
